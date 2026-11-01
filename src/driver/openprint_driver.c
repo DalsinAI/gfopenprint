@@ -245,7 +245,8 @@ static void text_char(UBYTE c)
     char q[4];
     ensure_text(); if(!g_text_open)return;
     if(c=='('||c==')'||c=='\\'){q[0]='\\';q[1]=(char)c;pw_n(q,2);return;}
-    if(c>=32&&c<127){q[0]=(char)c;pw_n(q,1);return;}
+    /* '%' as \045: the spooler ends a job at the first "%%EOF" it sees, and printed text can hold one */
+    if(c>=32&&c<127&&c!='%'){q[0]=(char)c;pw_n(q,1);return;}
     q[0]='\\';q[1]=(char)('0'+((c>>6)&7));q[2]=(char)('0'+((c>>3)&7));q[3]=(char)('0'+(c&7));
     pw_n(q,4);
 }
