@@ -53,6 +53,9 @@ static UWORD g_dpi;
 static UWORD g_img_w, g_img_h;
 static ULONG g_img_row_len, g_img_row_cap;
 static UBYTE g_doc_open, g_page_open, g_text_open, g_img_open;
+static UBYTE g_enc[192];                /* a picture's ASCII85 text on its way to the port */
+static UWORD g_enc_n;
+static UBYTE g_a85[4], g_a85_n, g_a85_col;  /* the ASCII85 group being filled, and groups on the line */
 
 static ULONG slen(const char *s)
 {
@@ -193,6 +196,7 @@ static void ensure_text(void)
     g_text_open=1;
 }
 static void end_page(void);
+static void img_end(void);
 /* The next line; past the page's last line, a new page (the next character starts it). */
 static void text_newline(void)
 {
@@ -209,7 +213,7 @@ static void end_page(void)
 {
     ULONG len;
     if(!g_page_open)return;
-    if(g_img_open){pw(">\nEI\nQ\n");g_img_open=0;}
+    img_end();
     close_text();
     len=g_offset-g_content_start;
     pw("endstream\nendobj\n");
@@ -247,11 +251,11 @@ static void text_char(UBYTE c)
     char q[4];
     ensure_text(); if(!g_text_open)return;
     if(c=='('||c==')'||c=='\\'){q[0]='\\';q[1]=(char)c;pw_n(q,2);return;}
-    if(c>=32&&c<127){q[0]=(char)c;pw_n(q,1);return;}
+    /* '%' as \045: the spooler ends a job at the first "%%EOF" it sees, and printed text can hold one */
+    if(c>=32&&c<127&&c!='%'){q[0]=(char)c;pw_n(q,1);return;}
     q[0]='\\';q[1]=(char)('0'+((c>>6)&7));q[2]=(char)('0'+((c>>3)&7));q[3]=(char)('0'+(c&7));
     pw_n(q,4);
 }
-static UBYTE hx(UBYTE v){v&=15;return (UBYTE)(v<10?'0'+v:'A'+v-10);}
 static void set_density(ULONG flags)
 {
     switch(flags&SPECIAL_DENSITYMASK){
@@ -336,7 +340,7 @@ static LONG render_init(struct IODRPReq *io,LONG width,LONG height)
     (void)io;if(width<=0||height<=0)return PDERR_BADDIMENSION;
     begin_page(1);close_text();
     g_img_w=(UWORD)width;g_img_h=(UWORD)height;
-    g_img_row_cap=(ULONG)g_img_w*6+1;
+    g_img_row_cap=(ULONG)g_img_w*3;
     g_img_row_len=g_img_row_cap;
     PD->pd_PrintBuf=AllocMem(g_img_row_cap,MEMF_PUBLIC);
     if(!PD->pd_PrintBuf)return PDERR_BUFFERMEMORY;
@@ -346,22 +350,60 @@ static LONG render_init(struct IODRPReq *io,LONG width,LONG height)
     y=(g_page_h>draw_h+40)?g_page_h-draw_h-40:0;
     pw("q\n");pw_u(draw_w);pw(" 0 0 ");pw_u(draw_h);pw(" 40 ");pw_u(y);pw(" cm\n");
     pw("BI /W ");pw_u(g_img_w);pw(" /H ");pw_u(g_img_h);
-    pw(" /CS /RGB /BPC 8 /F /AHx ID\n");
+    pw(" /CS /RGB /BPC 8 /F [/A85 /RL] ID\n");
     flush_out();
+    g_a85_n=0;g_a85_col=0;g_enc_n=0;
     g_img_open=1;return PDERR_NOERR;
 }
-static void put_rgb_hex(UBYTE *dst,ULONG *pos,UBYTE r4,UBYTE g4,UBYTE b4)
+/* A picture's rows are RGB bytes, run-length coded (/RunLengthDecode) and then written as ASCII85
+ * (/ASCII85Decode): a white page is a few bytes a row, and the worst row is 1.26 times its bytes, where the
+ * ASCII hex it was before was always 2 (a 300 dpi A4 page: 52 MB). ASCII85 ends at its own "~>", so the inline
+ * image's end is found as with hex. */
+static void enc_flush(void){if(g_enc_n)pw_n(g_enc,g_enc_n);g_enc_n=0;}
+static void a85_group(void)
 {
-    UBYTE r=(UBYTE)((r4&15)*17),g=(UBYTE)((g4&15)*17),b=(UBYTE)((b4&15)*17);
-    dst[(*pos)++]=hx(r>>4);dst[(*pos)++]=hx(r);
-    dst[(*pos)++]=hx(g>>4);dst[(*pos)++]=hx(g);
-    dst[(*pos)++]=hx(b>>4);dst[(*pos)++]=hx(b);
+    ULONG v=0;UBYTE i,n=g_a85_n;char c[5];
+    for(i=0;i<4;i++)v=(v<<8)|(i<n?g_a85[i]:0);
+    if(g_enc_n>sizeof g_enc-8)enc_flush();
+    if(n==4&&!v)g_enc[g_enc_n++]='z';
+    else {
+        for(i=5;i>0;i--){c[i-1]=(char)('!'+v%85);v/=85;}
+        for(i=0;i<=n;i++)g_enc[g_enc_n++]=(UBYTE)c[i];
+    }
+    g_a85_n=0;
+    if(++g_a85_col>=15){g_enc[g_enc_n++]='\n';g_a85_col=0;}
+}
+static void a85_byte(UBYTE b){g_a85[g_a85_n++]=b;if(g_a85_n==4)a85_group();}
+/* one row as runs: a byte 0-127 and that many plus one bytes as they are, or 129-255 and one byte 257 minus
+ * it times */
+static void rl_row(const UBYTE *p,ULONG n)
+{
+    ULONG i=0,j,k;
+    while(i<n){
+        for(j=i+1;j<n&&j-i<128&&p[j]==p[i];j++);
+        if(j-i>=2){a85_byte((UBYTE)(257-(j-i)));a85_byte(p[i]);i=j;continue;}
+        for(j=i+1;j<n&&j-i<128&&!(j+2<n&&p[j]==p[j+1]&&p[j]==p[j+2]);j++);
+        a85_byte((UBYTE)(j-i-1));
+        for(k=i;k<j;k++)a85_byte(p[k]);
+        i=j;
+    }
+    enc_flush();
+}
+/* the picture's end: the runs' end (128), the last ASCII85 group and "~>", then the image's */
+static void img_end(void)
+{
+    if(!g_img_open)return;
+    a85_byte(128);
+    if(g_a85_n)a85_group();
+    enc_flush();
+    pw("~>\nEI\nQ\n");
+    g_img_open=0;
 }
 static LONG render_clear(void)
 {
     ULONG i;if(!PD->pd_PrintBuf||!g_img_row_cap)return PDERR_CANCEL;
-    for(i=0;i+1<g_img_row_cap;i++)PD->pd_PrintBuf[i]='F';
-    PD->pd_PrintBuf[g_img_row_cap-1]='\n';g_img_row_len=g_img_row_cap;
+    for(i=0;i<g_img_row_cap;i++)PD->pd_PrintBuf[i]=0xFF;
+    g_img_row_len=g_img_row_cap;
     return PDERR_NOERR;
 }
 static LONG render_transfer(struct PrtInfo *pi,LONG row)
@@ -371,15 +413,17 @@ static LONG render_transfer(struct PrtInfo *pi,LONG row)
     if(!pi||!PD->pd_PrintBuf||!pi->pi_ColorInt)return PDERR_CANCEL;
     /* printer.device supplies a full destination row and pi_xpos tells the
      * driver where the scaled source begins (for centering/margins). */
-    for(i=0;i+1<g_img_row_cap;i++)PD->pd_PrintBuf[i]='F';
-    PD->pd_PrintBuf[g_img_row_cap-1]='\n';
-    out=pi->pi_xpos;if(out>g_img_w)out=g_img_w;p=out*6;
+    for(i=0;i<g_img_row_cap;i++)PD->pd_PrintBuf[i]=0xFF;
+    out=pi->pi_xpos;if(out>g_img_w)out=g_img_w;p=out*3;
     src=pi->pi_ColorInt;scale=pi->pi_ScaleX;
     for(src_i=0;src_i<pi->pi_width && out<g_img_w;src_i++,src++){
         UWORD repeat=scale?scale[src_i]:1;UWORD n;
-        UBYTE r=src->colorByte[PCMRED],g=src->colorByte[PCMGREEN],b=src->colorByte[PCMBLUE];
+        UBYTE r=(UBYTE)((src->colorByte[PCMRED]&15)*17),g=(UBYTE)((src->colorByte[PCMGREEN]&15)*17),
+              b=(UBYTE)((src->colorByte[PCMBLUE]&15)*17);
         if(!repeat)repeat=1;
-        for(n=0;n<repeat && out<g_img_w;n++,out++)put_rgb_hex(PD->pd_PrintBuf,&p,r,g,b);
+        for(n=0;n<repeat && out<g_img_w;n++,out++){
+            PD->pd_PrintBuf[p++]=r;PD->pd_PrintBuf[p++]=g;PD->pd_PrintBuf[p++]=b;
+        }
     }
     g_img_row_len=g_img_row_cap;
     return PDERR_NOERR;
@@ -387,14 +431,14 @@ static LONG render_transfer(struct PrtInfo *pi,LONG row)
 static LONG render_flush(LONG rows)
 {
     if(rows<=0)return PDERR_NOERR;
-    if(PD->pd_PrintBuf&&g_img_row_len)pw_n(PD->pd_PrintBuf,g_img_row_len);
+    if(PD->pd_PrintBuf&&g_img_row_len&&g_img_open)rl_row(PD->pd_PrintBuf,g_img_row_len);
     flush_out();
     return PDERR_NOERR;
 }
 static LONG render_close(LONG error,ULONG flags)
 {
     if(error!=PDERR_CANCEL){
-        if(g_img_open){pw(">\nEI\nQ\n");g_img_open=0;}
+        img_end();
         if(!(flags&SPECIAL_NOFORMFEED))end_page();
     } else {
         g_img_open=0;g_page_open=0;g_text_open=0;g_doc_open=0;

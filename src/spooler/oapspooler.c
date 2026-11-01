@@ -69,14 +69,17 @@ static int ensure_spool(void)
     make_path();spool_file=Open((STRPTR)spool_path,MODE_NEWFILE);spool_bytes=0;tail_len=0;head_len=0;
     return spool_file!=0;
 }
+/* The job's first bytes, and its last 8: only the last min(n,8) of a write can be in the tail, so the tail moves
+ * once a write, not once a byte (a 300 dpi picture is tens of MB). */
 static void update_tail(const UBYTE *p,ULONG n)
 {
-    ULONG i;
+    ULONG i,keep;
     for(i=0;i<n&&head_len<sizeof(head);i++)head[head_len++]=p[i];
-    for(i=0;i<n;i++){
-        if(tail_len<sizeof(tail))tail[tail_len++]=(char)p[i];
-        else {int j;for(j=0;j<(int)sizeof(tail)-1;j++)tail[j]=tail[j+1];tail[sizeof(tail)-1]=(char)p[i];}
-    }
+    if(n>=sizeof(tail)){p+=n-sizeof(tail);n=sizeof(tail);}
+    keep=tail_len+n>sizeof(tail)?sizeof(tail)-n:tail_len;  /* the old tail's last bytes still in it */
+    for(i=0;i<keep;i++)tail[i]=tail[tail_len-keep+i];
+    for(i=0;i<n;i++)tail[keep+i]=(char)p[i];
+    tail_len=(UBYTE)(keep+n);
 }
 static int ends_pdf(void)
 {
