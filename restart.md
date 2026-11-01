@@ -1,23 +1,23 @@
-# Restart: OpenPrint and OpenView
+# Restart: GFOpenPrint and GFOpenView
 
 _Written 6 October 2026 at about 23:55 UTC, while all work is paused on @SacredTrees's word (23:28 UTC). Read this first when work resumes; the newest capsule and the live PR list win if they disagree._
 
 ## What this repo is
 
-OpenPrint prints from AmigaOS 3.2.x to modern IPP printers and PDF. OpenView is the viewer that replaces MultiView in OpenUp.
+GFOpenPrint prints from AmigaOS 3.2.x to modern IPP printers and PDF. GFOpenView is the viewer that replaces MultiView in GFOpenUp.
 
 ## Where it stands
 
-OpenView 0.4 (Find in text and AmigaGuide, #11) ships in OpenUp 0.6.13, and OpenView is the default viewer and on the dock.
+GFOpenView 0.4 (Find in text and AmigaGuide, #11) ships in GFOpenUp 0.6.13, and GFOpenView is the default viewer and on the dock.
 
 ## Merged lately
 
-- #12 (6a70488, 2026-10-06): Credit who made OpenPrint: CONTRIBUTORS.md
-- #11 (de2a3bb, 2026-10-06): OpenView 0.4: Find in text and AmigaGuide files
+- #12 (6a70488, 2026-10-06): Credit who made GFOpenPrint: CONTRIBUTORS.md
+- #11 (de2a3bb, 2026-10-06): GFOpenView 0.4: Find in text and AmigaGuide files
 - #10 (bbbbecf, 2026-10-04): Say "we" in the repository's text, not a person's name
 - #6 (d37f4eb, 2026-10-04): GadTools redesign: one Print requester, Printers and Queue, OpenAmigaView pass
-- #7 (8fb9fe2, 2026-10-04): OpenPrint and OpenView: names without "Amiga", and an Aminet readme
-- #9 (37b564a, 2026-10-04): OS 3.2-style icons for the whole OpenPrint package
+- #7 (8fb9fe2, 2026-10-04): GFOpenPrint and GFOpenView: names without "Amiga", and an Aminet readme
+- #9 (37b564a, 2026-10-04): OS 3.2-style icons for the whole GFOpenPrint package
 
 ## Open pull requests
 
@@ -33,7 +33,7 @@ OpenView 0.4 (Find in text and AmigaGuide, #11) ships in OpenUp 0.6.13, and Open
 
 ## Who owns it
 
-OpenFiles thread (OpenView); Main Discourse for packaging.
+GFOpenFiles thread (GFOpenView); Main Discourse for packaging.
 
 ## Capsules
 

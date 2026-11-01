@@ -1,13 +1,13 @@
 #!/bin/sh
 # Copyright (c) 2026 AmigaChrome Team. SPDX-License-Identifier: MIT
-# IPPS end to end on x86 or ARM64 cores, with no internet: OpenPrint's own
+# IPPS end to end on x86 or ARM64 cores, with no internet: GFOpenPrint's own
 # connection, TLS, IPP and Print-Job code against printers on 127.0.0.1:
 #   - CUPS's ippeveprinter with its own self-signed certificate (as most
 #     printers have), and a second one with a certificate from a test
 #     authority made here;
 #   - tests/host/auth_printer.py, which asks for a login (Digest over
-#     IPPS; Basic over plain IPP, where OpenPrint must refuse to answer).
-# The TLS backend is OpenTLS: its own code built for the host when OPENTLS
+#     IPPS; Basic over plain IPP, where GFOpenPrint must refuse to answer).
+# The TLS backend is GFOpenTLS: its own code built for the host when OPENTLS
 # names an openamigatls checkout with build-host/ built, else its calls on
 # OpenSSL (tests/host/opentls_host.c). (Until 19 October 2026 every check
 # also ran with OpenSSL standing in for AmiSSL.)
@@ -30,7 +30,7 @@ cd "$LAB"
 
 # A test authority and a certificate it signs for localhost (and only that name).
 if [ ! -f ca/ca.crt ]; then
-    openssl req -x509 -newkey rsa:2048 -nodes -keyout ca/ca.key -out ca/ca.crt -days 30 -subj "/CN=OpenPrint Test CA" 2>/dev/null
+    openssl req -x509 -newkey rsa:2048 -nodes -keyout ca/ca.key -out ca/ca.crt -days 30 -subj "/CN=GFOpenPrint Test CA" 2>/dev/null
     openssl req -newkey rsa:2048 -nodes -keyout keys-ca/localhost.key -out ca/srv.csr -subj "/CN=localhost" 2>/dev/null
     printf 'subjectAltName=DNS:localhost\nbasicConstraints=CA:FALSE\nextendedKeyUsage=serverAuth\n' > ca/ext.cnf
     openssl x509 -req -in ca/srv.csr -CA ca/ca.crt -CAkey ca/ca.key -CAcreateserial -out keys-ca/localhost.crt \
@@ -42,10 +42,10 @@ stop() { for p in $PIDS; do kill "$p" 2>/dev/null || true; done; }
 trap stop 0 1 2 15
 # -r off: no DNS-SD advertisement on the LAN; -k: jobs stay in spool/, counted
 ippeveprinter -r off -k -n localhost -p $P_SELF -d "$SPOOL" -K "$LAB/keys-self" -f application/pdf -F application/pdf \
-    "OpenPrint IPPS self" > ippeve-self.log 2>&1 &
+    "GFOpenPrint IPPS self" > ippeve-self.log 2>&1 &
 PIDS="$PIDS $!"
 ippeveprinter -r off -k -n localhost -p $P_CA -d "$LAB/runs/$RUN/spool-ca" -K "$LAB/keys-ca" -f application/pdf -F application/pdf \
-    "OpenPrint IPPS CA" > ippeve-ca.log 2>&1 &
+    "GFOpenPrint IPPS CA" > ippeve-ca.log 2>&1 &
 PIDS="$PIDS $!"
 : > auth.log
 : > plain.log
@@ -54,16 +54,16 @@ PIDS="$PIDS $!"
 python3 -I "$ROOT/tests/host/auth_printer.py" $P_PLAIN - - "$LAB/plain.log" --plain --basic &
 PIDS="$PIDS $!"
 
-# The OpenTLS backend links the real OpenTLS (on BearSSL) when OPENTLS names
+# The GFOpenTLS backend links the real GFOpenTLS (on BearSSL) when OPENTLS names
 # an openamigatls checkout whose host libraries are built (cmake -S . -B
 # build-host); otherwise tests/host/opentls_host.c, its calls on OpenSSL.
 if [ -n "${OPENTLS:-}" ] && [ -f "$OPENTLS/build-host/libopentls.a" ]; then
     OT_INC="-I$OPENTLS/host/include -I$OPENTLS/include"
     OT_LIB="$OPENTLS/build-host/libopentls.a $OPENTLS/build-host/libbearssl.a $OPENTLS/build-host/libopencrypto.a"
-    OT_WHAT="opentls.library's own code (OpenTLS on BearSSL, host build)"
-    export OPENTLS_ROOT="$LAB/opentls-root"      # its ENV:OpenTLS
+    OT_WHAT="gfopentls.library's own code (GFOpenTLS on BearSSL, host build)"
+    export OPENTLS_ROOT="$LAB/opentls-root"      # its ENV:GFOpenTLS
     mkdir -p "$OPENTLS_ROOT"
-    # as an OpenTLS install has it: a CA bundle (this machine's), which none
+    # as a GFOpenTLS install has it: a CA bundle (this machine's), which none
     # of the test printers is signed by; OPENTLS_NO_BUNDLE=1 tests without one
     if [ -z "${OPENTLS_NO_BUNDLE:-}" ] && [ -f /etc/ssl/certs/ca-certificates.crt ]; then
         cp /etc/ssl/certs/ca-certificates.crt "$OPENTLS_ROOT/ca-bundle.pem"
@@ -73,14 +73,14 @@ if [ -n "${OPENTLS:-}" ] && [ -f "$OPENTLS/build-host/libopentls.a" ]; then
 else
     OT_INC="-I$ROOT/third_party/opentls/include -I$ROOT/tests/host/amiga"
     OT_LIB="$ROOT/tests/host/opentls_host.c"
-    OT_WHAT="tests/host/opentls_host.c (OpenTLS's calls on OpenSSL)"
+    OT_WHAT="tests/host/opentls_host.c (GFOpenTLS's calls on OpenSSL)"
 fi
-echo "OpenTLS backend runs on: $OT_WHAT"
+echo "GFOpenTLS backend runs on: $OT_WHAT"
 cc -std=c11 -D_DEFAULT_SOURCE -O2 -Wall -Wextra -Werror -I"$ROOT/include" $OT_INC \
    -DOAP_TLS_OPENTLS -o ipps_tool "$ROOT/tests/host/ipps_tool.c" \
    "$ROOT"/src/net/*.c "$ROOT"/src/tls/*.c "$ROOT/src/core/ipp.c" "$ROOT/src/core/job.c" "$ROOT/src/core/pdf_demo.c" \
    "$ROOT/src/discovery/protocol.c" "$ROOT/src/discovery/http.c" $OT_LIB -lssl -lcrypto
-printf '%%PDF-1.4\n%% OpenPrint IPPS host test\n%%%%EOF\n' > page.pdf
+printf '%%PDF-1.4\n%% GFOpenPrint IPPS host test\n%%%%EOF\n' > page.pdf
 sleep 2
 
 fails=0 checks=0
@@ -103,7 +103,7 @@ printf 'localhost:%s\tkim\tCircle Of Life\n' $P_AUTH > logins.txt
 out=$(OAP_TLS=none ./ipps_tool print ipp://localhost:$P_SELF/ipp/print page.pdf || true)
 check "plain ipp:// prints with no TLS library" 'rc=1' "$out"
 out=$(OAP_TLS=none ./ipps_tool query ipps://localhost:$P_SELF/ipp/print || true)
-check "ipps:// with no TLS library says what to install" 'verdict=notls.*|needs opentls.library' "$out"
+check "ipps:// with no TLS library says what to install" 'verdict=notls.*|needs gfopentls.library' "$out"
 
 for backend in opentls; do
     export OAP_TLS=$backend
@@ -162,5 +162,5 @@ check "no password over plain ipp://" "only over ipps://" "$out"
 check "(the plain printer never saw an Authorization header)" "^$" "$(grep -v 'auth=none' plain.log || true)"
 
 echo "$checks checks, $fails failed"
-[ $fails -eq 0 ] && echo "PASS: IPPS end to end against local printers, with OpenTLS; no internet"
+[ $fails -eq 0 ] && echo "PASS: IPPS end to end against local printers, with GFOpenTLS; no internet"
 [ $fails -eq 0 ]

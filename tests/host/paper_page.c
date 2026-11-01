@@ -1,8 +1,8 @@
 /* Copyright (c) 2026 AmigaChrome Team. SPDX-License-Identifier: MIT */
-/* OpenPrefs' Printing page's own code against the Print window's (src/core/paper.c), on the host:
+/* GFOpenPrefs' Printing page's own code against the Print window's (src/core/paper.c), on the host:
  *   - for every paper the page lists, its pr_put (openamigaprefs Printing/src/pr_prefs.c) writes printer.prefs as
- *     Use or Save does, from OpenPrinter's file and from printer.device's no-file state, and paper.c reads it back:
- *     the Print window starts on that paper (A4 for a size OpenPrint's driver prints on A4);
+ *     Use or Save does, from GFOpenPrinter's file and from printer.device's no-file state, and paper.c reads it back:
+ *     the Print window starts on that paper (A4 for a size GFOpenPrint's driver prints on A4);
  *   - mutated files: paper.c takes a file exactly when the page's reader (Look/src/pf_iff.c pf_parse) does, and
  *     reads the paper the page shows (pr_get).
  * Built and run by tests/test_paper_page.sh from an openamigaprefs checkout. Files only; nothing is printed. */
@@ -51,7 +51,7 @@ static void test_page_writes(void)
     int openprint, k, sizes = 0;
     for (k = 0; k < PR_PAPERS; k++)
         sizes += pr_paper_openprint(k);
-    CHECK(sizes == OAP_PAPERS, "the page's sizes OpenPrint makes (%d) are the window's (%d)", sizes, OAP_PAPERS);
+    CHECK(sizes == OAP_PAPERS, "the page's sizes GFOpenPrint makes (%d) are the window's (%d)", sizes, OAP_PAPERS);
     for (openprint = 1; openprint >= 0; openprint--)
         for (k = 0; k < PR_PAPERS; k++) {
             pf_file t, g;

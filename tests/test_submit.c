@@ -103,7 +103,7 @@ int main(void){
  /* IPPS printers not trusted yet, or no TLS library: nothing is sent */
  strcpy(o.printer_uri,"ipps://192.0.2.123/ipp/print");
  reset(7,0);rc=oap_ipp_submit_pdf_ex("build/submit-test-fixture.dat",&o,status,sizeof(status),progress,NULL);CHECK(rc==OAP_SEND_ERROR&&writes==0&&opened==0&&strstr(status,"isn't trusted")!=NULL);
- reset(8,0);rc=oap_ipp_submit_pdf_ex("build/submit-test-fixture.dat",&o,status,sizeof(status),progress,NULL);CHECK(rc==OAP_SEND_ERROR&&writes==0&&strstr(status,"opentls.library")!=NULL);
+ reset(8,0);rc=oap_ipp_submit_pdf_ex("build/submit-test-fixture.dat",&o,status,sizeof(status),progress,NULL);CHECK(rc==OAP_SEND_ERROR&&writes==0&&strstr(status,"gfopentls.library")!=NULL);
  raw_postscript();
  remove("build/submit-test-fixture.dat");printf("PASS: %d submission, cancellation, uncertainty and cleanup checks; no network used\n",checks);return 0;
 }

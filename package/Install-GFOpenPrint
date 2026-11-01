@@ -1,31 +1,31 @@
-; $VER: Install-OpenPrint @VERSION@ (@DATE@)
-; The Installer script for OpenPrint (C:Installer / SYS:System/Installer).
-; Run it from its icon in the OpenPrint package drawer.
+; $VER: Install-GFOpenPrint @VERSION@ (@DATE@)
+; The Installer script for GFOpenPrint (C:Installer / SYS:System/Installer).
+; Run it from its icon in the GFOpenPrint package drawer.
 
 (set #version "@VERSION@")
-(set @app-name "OpenPrint")
+(set @app-name "GFOpenPrint")
 
 (if (< (/ (getversion) 65536) 39)
-    (abort "OpenPrint needs AmigaOS 3.0 or later."))
+    (abort "GFOpenPrint needs AmigaOS 3.0 or later."))
 
 (welcome
-    (cat "This installs OpenPrint " #version ".\n\n"
-         "OpenPrint prints from this Amiga to printers on your network that "
-         "take PDF (IPP), and saves documents as PDF files. OpenView opens "
+    (cat "This installs GFOpenPrint " #version ".\n\n"
+         "GFOpenPrint prints from this Amiga to printers on your network that "
+         "take PDF (IPP), and saves documents as PDF files. GFOpenView opens "
          "pictures and documents and hands them to it."))
 
 (message
-    (cat "OpenPrint will put:\n\n"
-         "OpenPrint, OAPPrinters, OAPDiscover, OpenView and OAVWorker in C:\n"
+    (cat "GFOpenPrint will put:\n\n"
+         "GFOpenPrint, OAPPrinters, OAPDiscover, GFOpenView and OAVWorker in C:\n"
          "oapspool.device in DEVS:\n"
-         "the OpenPrint printer driver in DEVS:Printers\n"
+         "the GFOpenPrint printer driver in DEVS:Printers\n"
          "the spooler in WBStartup, if you want it\n"
-         "and an OpenPrint drawer with OpenView, Printers and Queue, "
+         "and a GFOpenPrint drawer with GFOpenView, Printers and Queue, "
          "a test picture and a test page.\n\n"
          "Files with the same names are replaced."))
 
 (copyfiles
-    (prompt "Copying the OpenPrint commands to C:")
+    (prompt "Copying the GFOpenPrint commands to C:")
     (help @copyfiles-help)
     (source "C")
     (dest "C:")
@@ -40,20 +40,20 @@
     (confirm))
 
 (copyfiles
-    (prompt "Copying the OpenPrint printer driver to DEVS:Printers")
+    (prompt "Copying the GFOpenPrint printer driver to DEVS:Printers")
     (help @copyfiles-help)
-    (source "Devs/Printers/OpenPrint")
+    (source "Devs/Printers/GFOpenPrint")
     (dest "DEVS:Printers")
     (infos)
     (optional "force"))
 
 (if (askbool
-        (prompt "Start the OpenPrint spooler each time Workbench starts?\n\n"
+        (prompt "Start the GFOpenPrint spooler each time Workbench starts?\n\n"
                 "It collects what programs print through printer.device and puts it "
                 "in the queue for the Print window.")
         (help "Without the spooler, programs that print through printer.device "
-              "with OpenPrint chosen in Prefs/Printer have nothing to collect "
-              "their pages. OpenView and the Print window work either way.")
+              "with GFOpenPrint chosen in Prefs/Printer have nothing to collect "
+              "their pages. GFOpenView and the Print window work either way.")
         (default 1))
     (copyfiles
         (prompt "Copying the spooler to SYS:WBStartup")
@@ -65,22 +65,22 @@
 
 (set #where
     (askdir
-        (prompt "Where should the OpenPrint drawer go?\n"
-                "(OpenView, Printers and Queue, and the test files)")
+        (prompt "Where should the GFOpenPrint drawer go?\n"
+                "(GFOpenView, Printers and Queue, and the test files)")
         (help @askdir-help)
         (default "SYS:Utilities")))
-(set #drawer (tackon #where "OpenPrint"))
+(set #drawer (tackon #where "GFOpenPrint"))
 (makedir #drawer
     (prompt "Making the drawer " #drawer)
     (help @makedir-help))
 (copyfiles
     (prompt "Copying the drawer's icon")
     (help @copyfiles-help)
-    (source "Icons/OpenPrint.info")
+    (source "Icons/GFOpenPrint.info")
     (dest #where)
     (optional "force"))
 (copyfiles
-    (prompt "Copying OpenView, Printers and Queue and the test files")
+    (prompt "Copying GFOpenView, Printers and Queue and the test files")
     (help @copyfiles-help)
     (source "Drawer")
     (dest #drawer)
@@ -88,8 +88,8 @@
     (optional "force"))
 (set @default-dest #drawer)
 
-; Before 4 October 2026 OpenPrint was OpenAmigaPrint, and OpenView was
-; OpenAmigaView. Their old files go to SYS:Storage/OpenPrint-Superseded, not
+; Before 4 October 2026 GFOpenPrint was OpenAmigaPrint, and GFOpenView was
+; OpenAmigaView. Their old files go to SYS:Storage/GFOpenPrint-Superseded, not
 ; away; the settings in ENV:OpenAmigaPrint are still read.
 (set #old 0)
 (if (exists "C:OpenAmigaPrint") (set #old 1))
@@ -102,7 +102,7 @@
 (if (exists "SYS:Tools/OAPPrinters") (set #old 1))
 (if #old
     (
-        (set #store "SYS:Storage/OpenPrint-Superseded")
+        (set #store "SYS:Storage/GFOpenPrint-Superseded")
         (if (not (exists #store)) (makedir #store (prompt "Making " #store) (help @makedir-help)))
         (if (exists "C:OpenAmigaPrint")
             (rename "C:OpenAmigaPrint" (tackon #store "OpenAmigaPrint")))
@@ -131,16 +131,16 @@
     ))
 
 (exit
-    (cat "OpenPrint is installed.\n\n"
-         "To try it: open the OpenPrint drawer, double-click Picture.png, "
-         "and choose Print... in OpenView.\n\n"
+    (cat "GFOpenPrint is installed.\n\n"
+         "To try it: open the GFOpenPrint drawer, double-click Picture.png, "
+         "and choose Print... in GFOpenView.\n\n"
          "Printers and Queue finds the printers on your network; choose one and "
          "click Use for printing.\n\n"
          "To print from any program: in Prefs/Printer choose the printer type "
-         "OpenPrint, the port \"device\" and oapspool.device unit 0. "
+         "GFOpenPrint, the port \"device\" and oapspool.device unit 0. "
          "The spooler starts with Workbench next time."
          (if #old
              (cat "\n\nOpenPrint was called OpenAmigaPrint. Its old files are in "
-                  "SYS:Storage/OpenPrint-Superseded; if Prefs/Printer named "
-                  "OpenAmigaPrint, choose OpenPrint there now.")
+                  "SYS:Storage/GFOpenPrint-Superseded; if Prefs/Printer named "
+                  "OpenAmigaPrint, choose GFOpenPrint there now.")
              "")))

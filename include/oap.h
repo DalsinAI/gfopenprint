@@ -15,7 +15,7 @@ typedef struct OAPJobOptions {
     int page_end;
 } OAPJobOptions;
 
-/* The paper sizes: those OpenPrint's driver makes (src/driver/openprint_driver.c, geometry) and OpenPrefs'
+/* The paper sizes: those GFOpenPrint's driver makes (src/driver/openprint_driver.c, geometry) and GFOpenPrefs'
  * Printing page lists first, in its order. A4 and Letter keep 0 and 1, as a .job's paper= and the remembered
  * settings have them. src/core/paper.c has their words and sizes, src/core/ipp.c their IPP media names. */
 enum { OAP_PAPER_A4 = 0, OAP_PAPER_LETTER = 1, OAP_PAPER_LEGAL = 2, OAP_PAPER_A3 = 3, OAP_PAPER_A5 = 4, OAP_PAPERS = 5 };
@@ -31,7 +31,7 @@ typedef struct OAPUri {
 } OAPUri;
 
 void oap_job_defaults(OAPJobOptions *o);
-/* The documents OpenPrint sends to printers: its own PDFs, and PostScript a program wrote itself (OAPSpooler
+/* The documents GFOpenPrint sends to printers: its own PDFs, and PostScript a program wrote itself (OAPSpooler
  * keeps that in the queue as .ps). PCL and other printer data are kept, never sent. */
 #define OAP_FORMAT_PDF "application/pdf"
 #define OAP_FORMAT_PS "application/postscript"

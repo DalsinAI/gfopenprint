@@ -4,12 +4,12 @@
 # os32 GCC 16 stove, into build/gcc65 and build/gcc16. Fails on any warning
 # or error from either (every compile has -Werror; this also catches the
 # assembler and linker).
-#   OS32_GCC65   GCC 6.5's m68k-amigaos-gcc (default ~/AmigaChrome/stoves/os32)
-#   OS32_GCC16   GCC 16's m68k-amigaos-gcc (default ~/AmigaChrome/stoves/os32-gcc16)
+#   OS32_GCC65   GCC 6.5's m68k-amigaos-gcc (default ~/AmiCradle/stoves/os32)
+#   OS32_GCC16   GCC 16's m68k-amigaos-gcc (default ~/AmiCradle/stoves/os32-gcc16)
 set -eu
 ROOT=$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)
-GCC65=${OS32_GCC65:-$HOME/AmigaChrome/stoves/os32/prefix/bin/m68k-amigaos-gcc}
-GCC16=${OS32_GCC16:-$HOME/AmigaChrome/stoves/os32-gcc16/prefix/bin/m68k-amigaos-gcc}
+GCC65=${OS32_GCC65:-$HOME/AmiCradle/stoves/os32/prefix/bin/m68k-amigaos-gcc}
+GCC16=${OS32_GCC16:-$HOME/AmiCradle/stoves/os32-gcc16/prefix/bin/m68k-amigaos-gcc}
 rc=0
 for pair in "gcc65:$GCC65" "gcc16:$GCC16"; do
     name=${pair%%:*}

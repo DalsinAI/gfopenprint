@@ -1,6 +1,6 @@
 /* Copyright (c) 2026 AmigaChrome Team. SPDX-License-Identifier: MIT */
 /* The printer chosen in Printers and Queue ("Use for printing"), for
- * OpenView: ENV:OpenPrint/PrinterURI, else its ENVARC: copy, else the
+ * GFOpenView: ENV:GFOpenPrint/PrinterURI, else its ENVARC: copy, else the
  * names used before 4 October 2026. */
 #include "oap.h"
 #include "oap_discovery.h"

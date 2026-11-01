@@ -1,5 +1,5 @@
 /* Copyright (c) 2026 AmigaChrome Team. SPDX-License-Identifier: MIT */
-/* Host tests only: the opentls.library calls OpenPrint's OpenTLS backend
+/* Host tests only: the gfopentls.library calls GFOpenPrint's GFOpenTLS backend
  * uses (API version 1, docs/AutoDocs-OpenTLS.md in DalsinAI/openamigatls),
  * made on OpenSSL, so src/tls/tls_opentls.c runs on x86 or ARM64 cores
  * against a printer emulator while the library itself is being built.
@@ -7,7 +7,7 @@
  * certificate errors are OTERR_UNTRUSTED/_HOSTNAME/_EXPIRED/_BADCERT/
  * _PINNED, the fingerprint and DER stay readable after a certificate
  * failure, and a pinned certificate is accepted whatever its chain. It
- * is not opentls.library and never ships. */
+ * is not gfopentls.library and never ships. */
 #include <clib/opentls_protos.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
@@ -303,7 +303,7 @@ LONG OT_Close(struct OTConnection *c)
 LONG OT_GetError(struct OTConnection *c) { return c ? c->error : OTERR_ARGS; }
 CONST_STRPTR OT_GetErrorText(struct OTConnection *c) { return (CONST_STRPTR)(c ? c->text : ""); }
 LONG OT_GetErrorDetail(struct OTConnection *c) { (void)c; return 0; }
-CONST_STRPTR OT_ErrorString(LONG e) { static char t[32]; snprintf(t, sizeof(t), "OpenTLS error %ld", (long)e); return (CONST_STRPTR)t; }
+CONST_STRPTR OT_ErrorString(LONG e) { static char t[32]; snprintf(t, sizeof(t), "GFOpenTLS error %ld", (long)e); return (CONST_STRPTR)t; }
 
 LONG OT_GetProtocol(struct OTConnection *c)
 {

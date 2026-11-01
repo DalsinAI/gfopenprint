@@ -25,8 +25,8 @@ struct OAPSpoolBase {
 struct ExecBase *SysBase;
 int start(void){return -1;}
 static const char dev_name[]="oapspool.device";
-static const char dev_id[]="oapspool.device 0.1 (3.10.2026) OpenPrint\r\n";
-static const char ver[] __attribute__((used))="$VER: oapspool.device 0.1 (3.10.2026) OpenPrint";
+static const char dev_id[]="oapspool.device 0.1 (3.10.2026) GFOpenPrint\r\n";
+static const char ver[] __attribute__((used))="$VER: oapspool.device 0.1 (3.10.2026) GFOpenPrint";
 
 /* The RomTag near the start, its table defined at the end. A RomTag that
  * ends exactly where the hunk ends is not found when the device is

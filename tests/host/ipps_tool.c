@@ -1,5 +1,5 @@
 /* Copyright (c) 2026 AmigaChrome Team. SPDX-License-Identifier: MIT */
-/* OpenPrint's real network, TLS and IPP code from the command line: the
+/* GFOpenPrint's real network, TLS and IPP code from the command line: the
  * host tests (tests/host/test_ipps.sh) run it against a printer emulator on
  * x86 or ARM64 cores, and the Amiga lab runs it as C:OAPIPPSTest.
  *   ipps_tool query URI          what the printer can do and its certificate
@@ -8,8 +8,8 @@
  *   ipps_tool trust KEY FP SUBJ  remember a printer's certificate
  * OAP_TLS=none leaves TLS out ("opentls": the one backend), OAP_TRUST_FILE the
  * remembered certificates, OAP_TLS_CA_FILE an extra authority, and
- * OAP_LOGIN_FILE the logins; on the Amiga, ENV:OpenPrint/TLS,
- * ENV:OpenPrint/TrustedPrinters and ENV:OpenPrint/Logins. */
+ * OAP_LOGIN_FILE the logins; on the Amiga, ENV:GFOpenPrint/TLS,
+ * ENV:GFOpenPrint/TrustedPrinters and ENV:GFOpenPrint/Logins. */
 #include "oap.h"
 #include "oap_net.h"
 #include "oap_tls.h"
@@ -49,7 +49,7 @@ static int tool_main(int argc, char **argv)
         int rc;
         oap_job_defaults(&o);
         snprintf(o.printer_uri, sizeof(o.printer_uri), "%s", argv[2]);
-        snprintf(o.job_name, sizeof(o.job_name), "%s", argc > 5 ? argv[5] : "OpenPrint IPPS host test");
+        snprintf(o.job_name, sizeof(o.job_name), "%s", argc > 5 ? argv[5] : "GFOpenPrint IPPS host test");
         if (argc > 4)
             o.copies = atoi(argv[4]);
         rc = oap_ipp_submit_doc_ex(argv[3], &o, status, sizeof(status), NULL, NULL);

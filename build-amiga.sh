@@ -8,7 +8,7 @@ else CC=$(command -v m68k-amigaos-gcc || echo m68k-amigaos-gcc); fi
 # Where it builds: OAP_OUT; else Cradle's OUT (so stove_build lists the programs); else build/amigaos3
 OUT=${OAP_OUT:-${OUT:-"$ROOT/build/amigaos3"}}
 mkdir -p "$OUT"
-python3 "$ROOT/tools/make_oap_app_icon.py" "$OUT/OpenPrintTool.info"
+python3 "$ROOT/tools/make_oap_app_icon.py" "$OUT/GFOpenPrintTool.info"
 # The 68040, soft float (one program for full and LC/EC 68040s): the specs
 # file links libnix's soft libm, not its FPU libm881.
 # Wall, Wextra and Werror on every 68k compile: the build is clean on GCC 6.5
@@ -19,13 +19,13 @@ NET="$ROOT/src/net/conn.c $ROOT/src/net/ipp_client.c $ROOT/src/net/ipp_submit.c 
 . "$ROOT/scripts/tls-flags.sh"
 # The Print requester: it hands sending to C:OAVWorker, so it has no network
 # code (tls.c without a backend: only the words for a certificate's state);
-# paper.c is where its paper starts (the .job, OpenPrefs' Printing page, its own).
+# paper.c is where its paper starts (the .job, GFOpenPrefs' Printing page, its own).
 "$CC" $APP -I"$ROOT/include" \
-  -o "$OUT/OpenPrint" \
+  -o "$OUT/GFOpenPrint" \
   "$ROOT/src/core/job.c" "$ROOT/src/core/paper.c" "$ROOT/src/tls/tls.c" "$ROOT/src/tls/trust.c" \
   "$ROOT/src/amiga/selection_events.c" "$ROOT/src/ui/oap_print_requester.c" "$ROOT/src/ui/oap_gt.c" "$ROOT/src/ui/oap_printers.c" "$ROOT/src/amiga/main.c" "$ROOT/src/amiga/oap_stack.c" "$ROOT/src/viewer/oav_core.c" "$ROOT/src/viewer/oav_jobs.c" -lamiga
-file "$OUT/OpenPrint"
-wc -c "$OUT/OpenPrint"
+file "$OUT/GFOpenPrint"
+wc -c "$OUT/GFOpenPrint"
 
 BARE="-m68040 -O2 -fno-delete-null-pointer-checks -fomit-frame-pointer -fno-toplevel-reorder -fno-builtin -Wall -Wextra -Werror -nostartfiles -nostdlib"
 "$CC" $BARE -I"$ROOT/include" -o "$OUT/oapspool.device" "$ROOT/src/device/oapspool_device.c" -lgcc
@@ -39,9 +39,9 @@ wc -c "$OUT/oapspool.device" "$OUT/OAPSpooler" "$OUT/oapspooltest" "$OUT/oapstat
 "$CC" -m68040 -c -o "$OUT/printertag.o" "$ROOT/src/driver/printertag.s"
 "$CC" -m68040 -fno-common -O2 -fno-delete-null-pointer-checks -Wall -Wextra -Werror -fomit-frame-pointer -fno-toplevel-reorder -fno-builtin -nostdlib -c -o "$OUT/openprint_driver.o"   "$ROOT/src/driver/openprint_driver.c"
 "$CC" -m68040 -fno-common -O2 -fno-delete-null-pointer-checks -Wall -Wextra -Werror -fomit-frame-pointer -fno-builtin -nostdlib -c -o "$OUT/oap_arith.o" "$ROOT/src/driver/arith.c"
-"$CC" -m68040 -nostartfiles -nostdlib   -Wl,-Map,"$OUT/OpenPrint.map"   -o "$OUT/OpenPrint.driver"   "$OUT/printertag.o" "$OUT/openprint_driver.o" "$OUT/oap_arith.o" -lgcc
-file "$OUT/OpenPrint.driver"
-wc -c "$OUT/OpenPrint.driver"
+"$CC" -m68040 -nostartfiles -nostdlib   -Wl,-Map,"$OUT/OpenPrint.map"   -o "$OUT/GFOpenPrint.driver"   "$OUT/printertag.o" "$OUT/openprint_driver.o" "$OUT/oap_arith.o" -lgcc
+file "$OUT/GFOpenPrint.driver"
+wc -c "$OUT/GFOpenPrint.driver"
 
 "$CC" $APP -o "$OUT/oapprinttest" "$ROOT/tests/oapprinttest.c"
 file "$OUT/oapprinttest"
@@ -63,6 +63,6 @@ file "$OUT/OAVWorker"
   "$ROOT/src/discovery/protocol.c" "$ROOT/src/discovery/http.c" "$ROOT/src/core/job.c" "$ROOT/src/core/ipp.c" $NET $TLS_SOURCES -lamiga
 file "$OUT/OAPIPPSTest"
 
-python3 "$ROOT/tools/make_oap_icon.py" "$OUT/OpenPrint.info"
-file "$OUT/OpenPrint.info"
-wc -c "$OUT/OpenPrint.info"
+python3 "$ROOT/tools/make_oap_icon.py" "$OUT/GFOpenPrint.info"
+file "$OUT/GFOpenPrint.info"
+wc -c "$OUT/GFOpenPrint.info"

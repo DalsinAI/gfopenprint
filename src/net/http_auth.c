@@ -1,10 +1,10 @@
 /* Copyright (c) 2026 AmigaChrome Team. SPDX-License-Identifier: MIT */
 /* HTTP Basic and Digest (RFC 7617, RFC 7616 with MD5) for printers that
- * ask for a user name and password (include/oap_net.h). OpenPrint answers
+ * ask for a user name and password (include/oap_net.h). GFOpenPrint answers
  * them only on ipps:// connections whose certificate was accepted: a
  * password never goes out in the clear, nor to a printer not yet trusted.
  *
- * The logins are ENV:OpenPrint/Logins (and its ENVARC: copy), one line
+ * The logins are ENV:GFOpenPrint/Logins (and its ENVARC: copy), one line
  * per printer, "host:port <TAB> user <TAB> password" (the host and port as
  * in the printer's address); OAP_LOGIN_FILE on x86 or ARM64 cores. */
 #include "oap_net.h"
@@ -319,7 +319,7 @@ int oap_login_lookup(const char *trust_key, char *user, size_t user_cap, char *p
     size_t k = strlen(trust_key);
     char *line;
 #ifdef __amigaos__
-    LONG got = GetVar((STRPTR)"OpenPrint/Logins", (STRPTR)buf, sizeof(buf), GVF_GLOBAL_ONLY | GVF_BINARY_VAR);
+    LONG got = GetVar((STRPTR)"GFOpenPrint/Logins", (STRPTR)buf, sizeof(buf), GVF_GLOBAL_ONLY | GVF_BINARY_VAR);
     if (got <= 0)
         return 0;
     buf[got < (LONG)sizeof(buf) ? got : (LONG)sizeof(buf) - 1] = 0;

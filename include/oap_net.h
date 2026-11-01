@@ -1,14 +1,14 @@
 /* Copyright (c) 2026 AmigaChrome Team. SPDX-License-Identifier: MIT */
 #ifndef OAP_NET_H
 #define OAP_NET_H
-/* The one place OpenPrint meets a printer over TCP: a connection to the
+/* The one place GFOpenPrint meets a printer over TCP: a connection to the
  * host and port of an ipp:// or ipps:// address, with every wait bounded,
  * and TLS on the same socket for ipps:// (include/oap_tls.h). Everything
  * above it (the IPP client, discovery's capability check, Print-Job)
  * talks to an OAPConn and never to a socket or a TLS library.
  *
  * On AmigaOS the sockets come from bsdsocket.library (Roadshow, AmiTCP,
- * Miami, Genesis, OpenSocket...); the library belongs to the task that
+ * Miami, Genesis, GFOpenSocket...); the library belongs to the task that
  * opens it, so each program that talks to printers calls oap_net_start()
  * first and oap_net_stop() at the end. On x86 or ARM64 cores (the host
  * tests) the same code uses BSD sockets. */
@@ -71,7 +71,7 @@ int oap_http_authorization(const char *challenge, const char *user, const char *
                            const char *method, const char *path, unsigned counter,
                            char *out, size_t cap);
 /* The user name and password kept for a printer ("host:port") in
- * ENV:OpenPrint/Logins; 1 when there is one. */
+ * ENV:GFOpenPrint/Logins; 1 when there is one. */
 int oap_login_lookup(const char *trust_key, char *user, size_t user_cap, char *password, size_t password_cap);
 void oap_md5_hex(const void *data, size_t n, char out[33]);
 extern const char *oap_digest_test_cnonce;   /* tests only: a fixed cnonce */

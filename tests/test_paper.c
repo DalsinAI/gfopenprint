@@ -13,9 +13,9 @@
 static int fails, checks;
 #define CHECK(c, ...) do { checks++; if (!(c)) { printf("FAIL %s:%d: ", __FILE__, __LINE__); printf(__VA_ARGS__); putchar('\n'); fails++; } } while (0)
 
-/* The printer.prefs openamigaup's OpenPrinter part writes where there is none (tools/build_pack.py printer_prefs;
- * the same bytes as openamigaprefs Printing/tests/openprinter-printer.prefs): PRHD, PTXT (OpenPrint, A4), PUNT
- * (oapspool), PDEV. OpenPrefs' Printing page changes pt_PaperSize in place: PTXT's data is at 34, the size at 84. */
+/* The printer.prefs openamigaup's GFOpenPrinter part writes where there is none (tools/build_pack.py printer_prefs;
+ * the same bytes as openamigaprefs Printing/tests/openprinter-printer.prefs): PRHD, PTXT (GFOpenPrint, A4), PUNT
+ * (oapspool), PDEV. GFOpenPrefs' Printing page changes pt_PaperSize in place: PTXT's data is at 34, the size at 84. */
 static const unsigned char openprinter[222] = {
     0x46,0x4f,0x52,0x4d,0x00,0x00,0x00,0xd6,0x50,0x52,0x45,0x46,0x50,0x52,0x48,0x44,0x00,0x00,0x00,0x06,
     0x00,0x00,0x00,0x00,0x00,0x00,0x50,0x54,0x58,0x54,0x00,0x00,0x00,0x40,0x00,0x00,0x00,0x00,0x00,0x00,
@@ -37,7 +37,7 @@ static void put32(unsigned char *p, unsigned long v)
     p[0] = (unsigned char)(v >> 24); p[1] = (unsigned char)(v >> 16); p[2] = (unsigned char)(v >> 8); p[3] = (unsigned char)v;
 }
 
-/* the OpenPrinter file with pt_PaperSize set, as the Printing page's Use or Save leaves it */
+/* the GFOpenPrinter file with pt_PaperSize set, as the Printing page's Use or Save leaves it */
 static const unsigned char *with_paper(int pt)
 {
     static unsigned char b[sizeof openprinter];
@@ -129,7 +129,7 @@ static void test_prefs_file(void)
     static const int sizes[] = { OAP_PT_LETTER, OAP_PT_LEGAL, OAP_PT_A3, OAP_PT_A4, OAP_PT_A5, 2, 5, 13 };
     size_t i;
 
-    CHECK(oap_printer_prefs_paper(openprinter, sizeof openprinter) == OAP_PT_A4, "OpenPrinter's printer.prefs: A4");
+    CHECK(oap_printer_prefs_paper(openprinter, sizeof openprinter) == OAP_PT_A4, "GFOpenPrinter's printer.prefs: A4");
     for (i = 0; i < sizeof sizes / sizeof sizes[0]; i++)
         CHECK(oap_printer_prefs_paper(with_paper(sizes[i]), sizeof openprinter) == sizes[i], "the page's size %d read", sizes[i]);
     CHECK(oap_paper_from_page(oap_printer_prefs_paper(with_paper(OAP_PT_LETTER), sizeof openprinter)) == OAP_PAPER_LETTER &&
@@ -255,7 +255,7 @@ static void test_settings(void)
           !oap_settings_read(NULL, &o, &kept, &page) && kept == 99 && page == 99, "not settings: nothing changed");
 }
 
-/* One OpenPrint run as the Print window does it: the remembered settings and the page's printer.prefs in, the
+/* One GFOpenPrint run as the Print window does it: the remembered settings and the page's printer.prefs in, the
  * paper it starts on out; Print, with the paper chosen in the window or not, writes the settings back. */
 static char var[96];
 static int run(const unsigned char *prefs, int job, int choose)
@@ -280,7 +280,7 @@ static void test_story(void)
 {
     var[0] = 0;
     CHECK(run(NULL, -1, -1) == OAP_PAPER_A4, "a new disk: A4");
-    CHECK(run(with_paper(OAP_PT_A4), -1, OAP_PAPER_LEGAL) == OAP_PAPER_A4, "OpenPrinter's A4; Legal chosen");
+    CHECK(run(with_paper(OAP_PT_A4), -1, OAP_PAPER_LEGAL) == OAP_PAPER_A4, "GFOpenPrinter's A4; Legal chosen");
     CHECK(run(with_paper(OAP_PT_A4), -1, -1) == OAP_PAPER_LEGAL, "the page unchanged: Legal, as chosen");
     CHECK(run(with_paper(OAP_PT_LETTER), -1, -1) == OAP_PAPER_LETTER, "Letter on the page: Letter");
     CHECK(run(with_paper(OAP_PT_LETTER), -1, -1) == OAP_PAPER_LETTER, "and again (Print didn't remember the start)");
@@ -295,9 +295,9 @@ static void test_story(void)
     CHECK(run(with_paper(OAP_PT_A5), -1, OAP_PAPER_A3) == OAP_PAPER_A5 && run(with_paper(OAP_PT_A5), -1, -1) == OAP_PAPER_A3,
           "A3 chosen against A5 again");
     CHECK(run(with_paper(OAP_PT_A5), -1, -1) == OAP_PAPER_A3, "Letter and back to A5 on the page, no Print between: A3");
-    /* an OpenPrint from before 25 October left Letter */
+    /* a GFOpenPrint from before 25 October left Letter */
     strcpy(var, "1 1 0 1 0");
-    CHECK(run(with_paper(OAP_PT_A5), -1, -1) == OAP_PAPER_A5, "an older OpenPrint's Letter: the page's A5");
+    CHECK(run(with_paper(OAP_PT_A5), -1, -1) == OAP_PAPER_A5, "an older GFOpenPrint's Letter: the page's A5");
     strcpy(var, "1 1 0 1 0");
     CHECK(run(NULL, -1, -1) == OAP_PAPER_LETTER, "with no printer.prefs: its Letter, as before");
 }

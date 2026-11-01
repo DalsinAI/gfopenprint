@@ -1,39 +1,39 @@
 Short:        Print to network PDF printers, IPP
 Uploader:     (We fill this in at upload time)
-Author:       AmigaChrome Team
+Author:       AmiCradle Team
 Type:         text/print
 Version:      0.3
-Requires:     bsdsocket.library (OpenSocket, Roadshow, AmiTCP or Miami);
-              for IPPS, opentls.library (OpenTLS)
+Requires:     bsdsocket.library (GFOpenSocket, Roadshow, AmiTCP or Miami);
+              for IPPS, gfopentls.library (GFOpenTLS)
 Architecture: m68k-amigaos >= 3.2.0
 Distribution: Aminet
 
-OpenPrint prints from AmigaOS to the printers on your network that take PDF
+GFOpenPrint prints from AmigaOS to the printers on your network that take PDF
 documents over IPP, and saves documents as PDF files on the Amiga.
 
-- IPPS (encrypted IPP) through opentls.library (OpenTLS): a printer's own
+- IPPS (encrypted IPP) through gfopentls.library (GFOpenTLS): a printer's own
   certificate is trusted once, by asking, and remembered by its fingerprint.
 
-- OpenPrint: one Print window for any document, with printer, copies, range,
+- GFOpenPrint: one Print window for any document, with printer, copies, range,
   paper and orientation.
-- OpenView: opens whatever a datatype reads (pictures, text, AmigaGuide,
+- GFOpenView: opens whatever a datatype reads (pictures, text, AmigaGuide,
   documents, sounds, animations), lays pictures out on the page and hands
   them to the Print window. It takes MultiView's command line and ARexx
-  commands, so OpenUp installs it as SYS:Utilities/MultiView.
+  commands, so GFOpenUp installs it as SYS:Utilities/MultiView.
 - Printers and Queue: finds the printers on the network (DNS-SD/mDNS), keeps
   the ones you use, and shows the print queue.
 - A printer driver and oapspool.device, so any program that prints through
-  printer.device can print through OpenPrint, with a spooler that starts with
+  printer.device can print through GFOpenPrint, with a spooler that starts with
   Workbench.
 - An Installer script; files of the old name are moved to SYS:Storage, not
   deleted.
 
-All windows are GadTools and adapt to the screen's font. OpenPrint and
-OpenView were called OpenAmigaPrint and OpenAmigaView until October 2026.
+All windows are GadTools and adapt to the screen's font. GFOpenPrint and
+GFOpenView were called OpenAmigaPrint and OpenAmigaView until October 2026.
 
 Free software under the MIT licence, Copyright (c) 2026 AmigaChrome Team. Use
 it, change it, fork it and ship it; keep the copyright notice and the licence
-with every copy. If you build on it, please say it is based on OpenPrint by
-the AmigaChrome Team.
+with every copy. If you build on it, please say it is based on GFOpenPrint by
+the AmiCradle Team.
 
 Source: https://github.com/DalsinAI/openamigaprint

@@ -1,5 +1,5 @@
 /* Copyright (c) 2026 AmigaChrome Team. SPDX-License-Identifier: MIT */
-/* OpenView: open, look, print. GadTools owns the window (We, 4 October
+/* GFOpenView: open, look, print. GadTools owns the window (We, 4 October
  * 2026: OS 3.x applications use GadTools or MUI, not ReAction);
  * datatypes.library owns what is shown in it.
  *   - Page setup is three labelled choices beside the picture; they apply to
@@ -7,11 +7,11 @@
  *   - Print... hands over to the Print requester: a PDF as it is, a picture
  *     as a PDF the worker makes first (C:OAVWorker).
  *   - Animations and sounds bring their datatype's own player bar.
- *   - A file dropped on the window opens; the ARexx port OPENVIEW takes
+ *   - A file dropped on the window opens; the ARexx port GFOPENVIEW takes
  *     the same commands as before.
- *   - OpenView 0.5 stands in for MultiView (OpenUp installs it as
+ *   - GFOpenView 0.5 stands in for MultiView (GFOpenUp installs it as
  *     SYS:Utilities/MultiView): MultiView 47's command line (every keyword
- *     and switch is read; the ones OpenView can't honour are ignored), the
+ *     and switch is read; the ones GFOpenView can't honour are ignored), the
  *     Workbench tool types of the project's icon, and ARexx on the port
  *     MULTIVIEW.n (or PORTNAME) with MultiView's commands as well. What it
  *     shows is whatever a datatype reads: no kind of file is named here. */
@@ -58,10 +58,10 @@
 #include <workbench/icon.h>
 #include <clib/alib_protos.h>
 
-/* amiga.lib's SetRexxVar: OpenNDK's libamiga.a has it, but its
+/* amiga.lib's SetRexxVar: GFOpenNDK's libamiga.a has it, but its
  * clib/alib_protos.h doesn't declare it yet, and the stoves build on
- * OpenNDK since 17 October 2026. Declared here, as NDK 3.2 declares it,
- * until OpenNDK's clib/alib_protos.h declares it (then remove this, or
+ * GFOpenNDK since 17 October 2026. Declared here, as NDK 3.2 declares it,
+ * until GFOpenNDK's clib/alib_protos.h declares it (then remove this, or
  * define OAV_HAVE_SETREXXVAR_PROTO). Where the header has it as well, the
  * two declarations are the same and do no harm. */
 #if !defined(OAV_HAVE_SETREXXVAR_PROTO) && !defined(SetRexxVar)
@@ -78,10 +78,10 @@ struct IntuitionBase *IntuitionBase;
 struct GfxBase *GfxBase;
 struct Library *UtilityBase, *DataTypesBase, *AslBase, *GadToolsBase, *WorkbenchBase, *IconBase;
 struct RxsLib *RexxSysBase;
-static const char oap_version[] __attribute__((used)) = "$VER: OpenView 0.5.1 (10.10.2026)";
+static const char oap_version[] __attribute__((used)) = "$VER: GFOpenView 0.5.1 (10.10.2026)";
 
 #define MAX_JOBS 128
-#define REXX_NAME "OPENVIEW"
+#define REXX_NAME "GFOPENVIEW"
 /* MultiView 47's template, word for word (MultiView ? says it too) */
 #define MV_TEMPLATE "FILE,CLIPBOARD/S,CLIPUNIT/K/N,SCREEN/S,PUBSCREEN/K,REQUESTER/S,BOOKMARK/S,FONTNAME/K,FONTSIZE/K/N," \
                     "BACKDROP/S,WINDOW/S,PORTNAME/K,IMMEDIATE/S,REPEAT/S,PRTUNIT/K/N,WINDOWLEFT/K/N,WINDOWTOP/K/N," \
@@ -206,7 +206,7 @@ static void status(const char *s)
 
 static void set_title(const char *path)
 {
-    snprintf(A.title, sizeof(A.title), "OpenView: %.120s", FilePart((STRPTR)path));
+    snprintf(A.title, sizeof(A.title), "GFOpenView: %.120s", FilePart((STRPTR)path));
     if (A.win)
         SetWindowTitles(A.win, (UBYTE *)A.title, (UBYTE *)~0);
 }
@@ -561,7 +561,7 @@ static int choose_file(char *path, int save)
 {
     static char last[OAV_PATH_MAX];
     struct FileRequester *r;
-    lastdir_get("OpenView", last, sizeof last);     /* 0.5.1: where the last one was, else Work: */
+    lastdir_get("GFOpenView", last, sizeof last);     /* 0.5.1: where the last one was, else Work: */
     r = AllocAslRequestTags(ASL_FileRequest, ASLFR_Window, (ULONG)A.win,
         ASLFR_TitleText, (ULONG)(save ? "Save PDF (new filename)" : "Open document, picture or animation"), ASLFR_DoSaveMode, save,
         ASLFR_InitialDrawer, (ULONG)(last[0] ? last : "Work:"), ASLFR_InitialFile, (ULONG)(save ? "Picture.pdf" : ""), ASLFR_SleepWindow, TRUE, TAG_DONE);
@@ -569,7 +569,7 @@ static int choose_file(char *path, int save)
     if (r) {
         if (AslRequestTags(r, TAG_DONE)) {
             copystr(path, OAV_PATH_MAX, (char *)r->fr_Drawer);
-            lastdir_put("OpenView", (const char *)r->fr_Drawer);
+            lastdir_put("GFOpenView", (const char *)r->fr_Drawer);
             if (AddPart((STRPTR)path, r->fr_File, OAV_PATH_MAX))
                 ok = 1;
         }
@@ -707,7 +707,7 @@ static int print_dialog(void)
         return 0;
     }
     if (is_pdf(A.path)) {
-        status(run_program("OpenPrint", A.path) ? "The Print window is open" : "Couldn't open OpenPrint");
+        status(run_program("GFOpenPrint", A.path) ? "The Print window is open" : "Couldn't open GFOpenPrint");
         return 1;
     }
     if (A.group != GID_PICTURE) {
@@ -740,7 +740,7 @@ static void poll_jobs(void)
         if (A.print_after) {
             const char *pdf = strstr(msg, "Queued: ");
             A.print_after = 0;
-            if (pdf && run_program("OpenPrint", pdf + 8))
+            if (pdf && run_program("GFOpenPrint", pdf + 8))
                 copystr(msg, sizeof(msg), "The Print window is open for this page");
         }
         set_gadget(B_CANCEL, GA_Disabled, TRUE);
@@ -1080,7 +1080,7 @@ static int set_option(const char *key, const char *val)
     return 1;
 }
 
-/* ---- ARexx: the port OPENVIEW, and MultiView's MULTIVIEW.n ------------------ */
+/* ---- ARexx: the port GFOPENVIEW, and MultiView's MULTIVIEW.n ------------------ */
 
 /* args: 0 none, 1 the rest of the line (needed), 2 two words, 3 the rest of the line (may be empty) */
 static const struct { const char *name; int id; int args; } rexx_commands[] = {
@@ -1321,7 +1321,7 @@ static int rexx_command(const char *line, const char **result)
         arg1 = word(&cursor, 1);
     switch (rexx_commands[i].id) {
     case RX_VERSION:
-        snprintf(A.resultbuf, sizeof(A.resultbuf), "OpenView %s GadTools", OAV_VERSION);
+        snprintf(A.resultbuf, sizeof(A.resultbuf), "GFOpenView %s GadTools", OAV_VERSION);
         break;
     case RX_HELP:
         copystr(A.resultbuf, sizeof(A.resultbuf), "OPEN [NAME] FILE | SET KEY VALUE | PRINT | SAVEPDF FILE | PLAY | PAUSE | STOP | NEXT | PREVIOUS | "
@@ -1358,7 +1358,7 @@ static int rexx_command(const char *line, const char **result)
     case B_OPEN: {
         char *name = keyword_value(arg1, "NAME");
         if (starts_with_word(name, "CLIPBOARD")) {
-            copystr(A.resultbuf, sizeof(A.resultbuf), "OpenView does not show the Clipboard");
+            copystr(A.resultbuf, sizeof(A.resultbuf), "GFOpenView does not show the Clipboard");
             return 5;
         }
         ok = action(B_OPEN, name);
@@ -1373,14 +1373,14 @@ static int rexx_command(const char *line, const char **result)
         copystr(A.resultbuf, sizeof(A.resultbuf), A.message);
         break;
     case RX_SAVEAS:
-        copystr(A.resultbuf, sizeof(A.resultbuf), "OpenView saves a picture as a PDF only (SAVEPDF)");
+        copystr(A.resultbuf, sizeof(A.resultbuf), "GFOpenView saves a picture as a PDF only (SAVEPDF)");
         return 5;
     case RX_COPY:
     case RX_PASTE:
-        copystr(A.resultbuf, sizeof(A.resultbuf), "OpenView has no selection or Clipboard use");
+        copystr(A.resultbuf, sizeof(A.resultbuf), "GFOpenView has no selection or Clipboard use");
         return 5;
     case RX_CLEARSEL:
-    case RX_SCREEN:                     /* OpenView always shows its window on a public screen */
+    case RX_SCREEN:                     /* GFOpenView always shows its window on a public screen */
     case RX_PUBSCREEN:
         break;
     case RX_GETTRIG: return rexx_triggerinfo(arg1);
@@ -1459,7 +1459,7 @@ static struct MsgPort *port_add(const char *name)
     return port;
 }
 
-/* OPENVIEW: one at a time, the first viewer's. MULTIVIEW.n (n from 1, the first free) or PORTNAME: every viewer's own,
+/* GFOPENVIEW: one at a time, the first viewer's. MULTIVIEW.n (n from 1, the first free) or PORTNAME: every viewer's own,
  * the names MultiView's callers use. */
 static void rexx_open(void)
 {
@@ -1758,7 +1758,7 @@ static void options_defaults(Options *o)
     o->fontsize = o->left = o->top = o->width = o->height = -1;
 }
 
-/* MultiView's template, read whole: FILE and the keywords OpenView honours are kept, the others (CLIPUNIT, SCREEN,
+/* MultiView's template, read whole: FILE and the keywords GFOpenView honours are kept, the others (CLIPUNIT, SCREEN,
  * BOOKMARK, BACKDROP, PRTUNIT, AUTORESIZE) are read and ignored. CLIPBOARD is read and answered in the status line. */
 static int options_from_cli(Options *o)
 {
@@ -1767,7 +1767,7 @@ static int options_from_cli(Options *o)
     memset(args, 0, sizeof(args));
     rda = ReadArgs((STRPTR)MV_TEMPLATE, args, NULL);
     if (!rda) {
-        PrintFault(IoErr(), (STRPTR)"OpenView");
+        PrintFault(IoErr(), (STRPTR)"GFOpenView");
         return 0;
     }
     if (args[0] && ((char *)args[0])[0])
@@ -1835,7 +1835,7 @@ static int viewer_main(int argc, char **argv)
     A.find_top = -1;
     copystr(A.message, sizeof(A.message), "Open a picture or a PDF, or drop one on this window");
     if (!libraries()) {
-        fputs("OpenView: needs AmigaOS 3.0 or later (datatypes, GadTools)\n", stderr);
+        fputs("GFOpenView: needs AmigaOS 3.0 or later (datatypes, GadTools)\n", stderr);
         goto out;
     }
     /* after the libraries: libnix's string functions use utility.library (a trap otherwise) */
@@ -1883,7 +1883,7 @@ static int viewer_main(int argc, char **argv)
     if (A.menu)
         LayoutMenus(A.menu, A.g.vi, GTMN_NewLookMenus, TRUE, TAG_DONE);
     A.win = OpenWindowTags(NULL,
-        WA_Title, (ULONG)"OpenView", WA_ScreenTitle, (ULONG)"OpenView: open, look, print",
+        WA_Title, (ULONG)"GFOpenView", WA_ScreenTitle, (ULONG)"GFOpenView: open, look, print",
         WA_PubScreen, (ULONG)A.g.screen,
         A.opt.width > 0 ? TAG_IGNORE : WA_InnerWidth, iw, A.opt.height > 0 ? TAG_IGNORE : WA_InnerHeight, ih,
         A.opt.width > 0 ? WA_Width : TAG_IGNORE, (ULONG)A.opt.width, A.opt.height > 0 ? WA_Height : TAG_IGNORE, (ULONG)A.opt.height,
@@ -1914,7 +1914,7 @@ static int viewer_main(int argc, char **argv)
     if (initial[0])
         load_file(initial);
     if (A.opt.clipboard)
-        status("OpenView does not show the Clipboard; open a file instead");
+        status("GFOpenView does not show the Clipboard; open a file instead");
 
     winsig = 1UL << A.win->UserPort->mp_SigBit;
     if (A.appport)

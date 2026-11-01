@@ -1,6 +1,6 @@
 /* Copyright (c) 2026 AmigaChrome Team. SPDX-License-Identifier: MIT */
 /* Printers' certificates the user chose to trust (include/oap_tls.h):
- * ENV:OpenPrint/TrustedPrinters and its ENVARC: copy, one line each:
+ * ENV:GFOpenPrint/TrustedPrinters and its ENVARC: copy, one line each:
  *   host:port <TAB> AB:CD:...(SHA-256) <TAB> who it is issued to
  * On x86 or ARM64 cores (host tests) the file named by OAP_TRUST_FILE. */
 #include "oap_tls.h"

@@ -30,7 +30,7 @@ int oap_tls_setting(const char *name, char *out, size_t cap)
 {
 #ifdef __amigaos__
     char var[64];
-    snprintf(var, sizeof(var), "OpenPrint/%s", name);
+    snprintf(var, sizeof(var), "GFOpenPrint/%s", name);
     if (GetVar((STRPTR)var, (STRPTR)out, (LONG)cap, GVF_GLOBAL_ONLY) > 0) {
         out[strcspn(out, "\r\n")] = 0;
         return out[0] != 0;
@@ -58,7 +58,7 @@ static int wanted(const OAPTlsBackend *b, const char *only)
         return 1;
     if (!strcmp(only, "none"))
         return 0;
-    return !strcmp(only, "opentls") && !strcmp(b->name, "OpenTLS");
+    return !strcmp(only, "opentls") && !strcmp(b->name, "GFOpenTLS");
 }
 
 int oap_tls_available(char *why, size_t why_cap)
@@ -76,7 +76,7 @@ int oap_tls_available(char *why, size_t why_cap)
             return 1;
         }
     }
-    snprintf(why, why_cap, "This printer uses IPPS (encrypted IPP), which needs opentls.library. "
+    snprintf(why, why_cap, "This printer uses IPPS (encrypted IPP), which needs gfopentls.library. "
              "Install it, or use the printer's ipp:// address.");
     return 0;
 }
@@ -114,7 +114,7 @@ const char *oap_cert_words(int verdict)
     case OAP_CERT_NAME: return "Certificate is for another name";
     case OAP_CERT_DATES: return "Certificate out of date (check the clock)";
     case OAP_CERT_BAD: return "Certificate unreadable or badly signed";
-    case OAP_CERT_NOTLS: return "Needs opentls.library for IPPS";
+    case OAP_CERT_NOTLS: return "Needs gfopentls.library for IPPS";
     default: return "Encrypted connection failed";
     }
 }

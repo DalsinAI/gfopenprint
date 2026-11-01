@@ -17,7 +17,7 @@ claimed from the filesystem trace alone.
 
 ## Repair
 
-- Each open OpenPrint dialog and OpenView window registers a named
+- Each open GFOpenPrint dialog and GFOpenView window registers a named
   Exec message port. The browser publishes a bounded, copied selection event
   only after validating the PDF-capable choice and saving it successfully.
 - Every explicit Use Printer is an event, even when its URI is unchanged.
@@ -39,7 +39,7 @@ claimed from the filesystem trace alone.
 
 ## Actual Instance-23 acceptance
 
-1. Installed the repaired OpenPrint, OpenView and OAPPrinters in C:
+1. Installed the repaired GFOpenPrint, GFOpenView and OAPPrinters in C:
    and their existing SYS:Tools locations. No driver, worker, startup-script,
    or Cradle runtime replacement and no instance reboot were required.
 2. Ran OAPSelectionSmoke in the isolated OAP.TestSelection. namespace:
@@ -56,9 +56,9 @@ claimed from the filesystem trace alone.
 6. No Print button was pressed and no send-worker request was created. This
    is a selection-handoff pass, not a new physical-print acceptance claim.
 
-The shared listener code is also integrated into OpenView. Its listener
+The shared listener code is also integrated into GFOpenView. Its listener
 build and native message semantics were checked; this incident's visual
-end-to-end check was on the OpenPrint dialog, not every viewer action.
+end-to-end check was on the GFOpenPrint dialog, not every viewer action.
 
 ## Repeatable test
 
@@ -66,7 +66,7 @@ Build with ./build-amiga.sh, ./build-viewer.sh and ./build-browser.sh.
 Run make test test-discovery test-submit for the existing regression gates.
 C:OAPSelectionSmoke writes Work:OAPSelectionSmoke.txt and performs no network
 operation or print submission. Its separate namespace never notifies normal
-print/viewer windows or changes the real OpenPrint printer preference.
+print/viewer windows or changes the real GFOpenPrint printer preference.
 
 For the UI regression, open the dialog with an explicit invalid URI, Browse,
 select the same confirmed printer that is already saved, then Use Printer.

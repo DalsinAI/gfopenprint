@@ -49,7 +49,7 @@ test-driver: build/test_driver
 test-discovery-sendfail:
 	sh tests/test_discovery_sendfail.sh
 
-# Where the Print window's paper starts (.job, OpenPrefs' Printing page, its own) and each size's IPP media name;
+# Where the Print window's paper starts (.job, GFOpenPrefs' Printing page, its own) and each size's IPP media name;
 # writes each paper's Print-Job request start to build/paper-*.ipp (files only, nothing sent).
 build/test_paper: tests/test_paper.c src/core/paper.c src/core/ipp.c src/core/job.c include/oap.h include/oap_paper.h
 	mkdir -p build
@@ -63,7 +63,7 @@ test-paper-page:
 	sh tests/test_paper_page.sh
 
 # IPPS end to end against printers on 127.0.0.1 (ippeveprinter and a login
-# printer), the OpenTLS backend; skips when ippeveprinter or OpenSSL is missing.
+# printer), the GFOpenTLS backend; skips when ippeveprinter or OpenSSL is missing.
 test-ipps:
 	sh tests/host/test_ipps.sh
 

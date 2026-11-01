@@ -7,9 +7,9 @@
 #define OAP_HOST_MAX 48
 #define OAP_HTTP_MAX 196608U
 #define OAP_BODY_MAX 131072U
-#define OAP_DISC_SELECTION "ENV:OpenPrint/PrinterURI"
-#define OAP_DISC_SAVED "ENVARC:OpenPrint/PrinterURI"
-/* Before 4 Oct 2026 OpenPrint was OpenAmigaPrint: its settings are read from
+#define OAP_DISC_SELECTION "ENV:GFOpenPrint/PrinterURI"
+#define OAP_DISC_SAVED "ENVARC:GFOpenPrint/PrinterURI"
+/* Before 4 Oct 2026 GFOpenPrint was OpenAmigaPrint: its settings are read from
  * the old place when the new one has none. */
 #define OAP_DISC_SELECTION_OLD "ENV:OpenAmigaPrint/PrinterURI"
 #define OAP_DISC_SAVED_OLD "ENVARC:OpenAmigaPrint/PrinterURI"

@@ -19,7 +19,7 @@ import struct
 import sys
 import threading
 
-USER, PASSWORD, REALM, NONCE = "kim", "Circle Of Life", "OpenPrint test", "dcd98b7102dd2f0e8b11d0f600bfb0c093"
+USER, PASSWORD, REALM, NONCE = "kim", "Circle Of Life", "GFOpenPrint test", "dcd98b7102dd2f0e8b11d0f600bfb0c093"
 
 
 def md5(text):
@@ -59,7 +59,7 @@ def ipp_reply(op, request_id):
     if op == 0x000B:
         out += b"\x04" + attr(0x49, "document-format-supported", b"application/pdf")
         out += attr(0x22, "printer-is-accepting-jobs", b"\x01") + attr(0x23, "printer-state", struct.pack(">I", 3))
-        out += attr(0x22, "color-supported", b"\x01") + attr(0x41, "printer-make-and-model", b"OpenPrint login test")
+        out += attr(0x22, "color-supported", b"\x01") + attr(0x41, "printer-make-and-model", b"GFOpenPrint login test")
     else:
         out += b"\x02" + attr(0x21, "job-id", struct.pack(">I", 7))
     return out + b"\x03"

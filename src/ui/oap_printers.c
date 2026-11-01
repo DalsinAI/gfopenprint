@@ -1,5 +1,5 @@
 /* Copyright (c) 2026 AmigaChrome Team. SPDX-License-Identifier: MIT */
-/* The printers OpenPrint knows (include/oap_printers.h). */
+/* The printers GFOpenPrint knows (include/oap_printers.h). */
 #include "oap_printers.h"
 #include "oap_discovery.h"
 #include "oap_tls.h"
@@ -124,7 +124,7 @@ void oap_printers_load(OAPPrinterList *list)
             }
         }
     }
-    got = GetVar((STRPTR)"OpenPrint/PrinterURI", (STRPTR)def, sizeof(def), GVF_GLOBAL_ONLY);
+    got = GetVar((STRPTR)"GFOpenPrint/PrinterURI", (STRPTR)def, sizeof(def), GVF_GLOBAL_ONLY);
     if (got <= 0)                              /* saved before the rename */
         got = GetVar((STRPTR)"OpenAmigaPrint/PrinterURI", (STRPTR)def, sizeof(def), GVF_GLOBAL_ONLY);
     if (got > 6 && (!strncmp(def, "ipp://", 6) || !strncmp(def, "ipps://", 7)) && oap_printers_find(list, def) < 0)
@@ -171,7 +171,7 @@ int oap_printers_merge(OAPPrinterList *list, const OAPDiscovery *scan)
 {
     char def[OAP_SELECTION_URI_MAX] = "";
     size_t i;
-    if (GetVar((STRPTR)"OpenPrint/PrinterURI", (STRPTR)def, sizeof(def), GVF_GLOBAL_ONLY) <= 0 &&
+    if (GetVar((STRPTR)"GFOpenPrint/PrinterURI", (STRPTR)def, sizeof(def), GVF_GLOBAL_ONLY) <= 0 &&
         GetVar((STRPTR)"OpenAmigaPrint/PrinterURI", (STRPTR)def, sizeof(def), GVF_GLOBAL_ONLY) <= 0)   /* before the rename */
         def[0] = 0;
     for (i = 0; i < scan->count; i++) {

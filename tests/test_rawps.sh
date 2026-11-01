@@ -1,6 +1,6 @@
 #!/bin/sh
 # Copyright (c) 2026 AmigaChrome Team. SPDX-License-Identifier: MIT
-# Raw PostScript to IPP printers, end to end on x86 or ARM64 cores: OpenPrint's own connection, IPP and
+# Raw PostScript to IPP printers, end to end on x86 or ARM64 cores: GFOpenPrint's own connection, IPP and
 # Print-Job code (OAPIPPSTest's, as C:OAVWorker sends) against stand-in printers on 127.0.0.1 only
 # (tests/host/ps_printer.py, which prints nothing), and CUPS's ippeveprinter too when it is installed.
 #   - PostScript reaches a printer that takes it byte for byte, with document-format, job-name (its %%Title)
@@ -22,17 +22,17 @@ CC=${HOST_CC:-cc}
     "$ROOT/src/discovery/protocol.c" "$ROOT/src/discovery/http.c"
 
 # A PostScript job as a program writes it (its title in the DSC header), a PDF, and PCL.
-printf '%%!PS-Adobe-3.0\n%%%%Title: (Quarterly report)\n%%%%Creator: PageStream\n%%%%Pages: 1\n%%%%EndComments\n/Courier findfont 12 scalefont setfont\n72 720 moveto (OpenPrint raw PostScript) show\nshowpage\n%%%%EOF\n' > report.ps
+printf '%%!PS-Adobe-3.0\n%%%%Title: (Quarterly report)\n%%%%Creator: PageStream\n%%%%Pages: 1\n%%%%EndComments\n/Courier findfont 12 scalefont setfont\n72 720 moveto (GFOpenPrint raw PostScript) show\nshowpage\n%%%%EOF\n' > report.ps
 printf '\004%%!PS-Adobe-2.0\n%%%%EndComments\nshowpage\n' > untitled.ps
-printf '%%PDF-1.4\n%% OpenPrint raw PostScript test\n%%%%EOF\n' > page.pdf
-printf '\033E\033&l0O OpenPrint PCL\f\033E' > page.pcl
+printf '%%PDF-1.4\n%% GFOpenPrint raw PostScript test\n%%%%EOF\n' > page.pdf
+printf '\033E\033&l0O GFOpenPrint PCL\f\033E' > page.pcl
 
 PIDS=""
 stop() { for p in $PIDS; do kill "$p" 2>/dev/null || true; done; }
 trap stop 0 1 2 15
 standin() {   # standin NAME PORT FORMATS MODE
     python3 -I "$ROOT/tests/host/ps_printer.py" --bind 127.0.0.1 --port "$2" --spool "$OUT/$1" --formats "$3" \
-        --mode "$4" --name "OpenPrint test $1" --log "$OUT/$1.log" > /dev/null 2>&1 &
+        --mode "$4" --name "GFOpenPrint test $1" --log "$OUT/$1.log" > /dev/null 2>&1 &
     PIDS="$PIDS $!"
 }
 P_PS=$BASE P_PDF=$((BASE + 1)) P_LIE=$((BASE + 2)) P_MUTE=$((BASE + 3)) P_EVE=$((BASE + 4))
@@ -78,7 +78,7 @@ check "none of a PDF's page settings" "^\$" "$(job ps 1 media)$(job ps 1 sides)$
 out=$(./ipps_tool print ipp://127.0.0.1:$P_PS/ipp/print untitled.ps || true)
 check "PostScript after a driver's end-of-job byte: accepted" "rc=1" "$out"
 check "as it is, the ^D too" "^$(sha untitled.ps)\$" "$(job ps 2 sha256)"
-check "no %%Title: the name it was given" "^OpenPrint IPPS host test\$" "$(job ps 2 job-name)"
+check "no %%Title: the name it was given" "^GFOpenPrint IPPS host test\$" "$(job ps 2 job-name)"
 
 asked=$(grep -c 'Get-Printer-Attributes' pdfonly.log)
 out=$(./ipps_tool print ipp://127.0.0.1:$P_PDF/ipp/print report.ps || true)
@@ -107,7 +107,7 @@ check "nothing reached the printer for it" "^$n\$" "$(grep -c 'Print-Job' ps.log
 if command -v ippeveprinter >/dev/null 2>&1; then
     mkdir -p eve
     ippeveprinter -r off -k -n localhost -p $P_EVE -d "$OUT/eve" -f application/pdf,application/postscript \
-        -F application/pdf "OpenPrint PS eve" > eve.log 2>&1 &
+        -F application/pdf "GFOpenPrint PS eve" > eve.log 2>&1 &
     PIDS="$PIDS $!"
     i=0; while [ $i -lt 30 ] && ! ./ipps_tool query ipp://127.0.0.1:$P_EVE/ipp/print 2>/dev/null | grep -q 'ps=1'; do sleep 1; i=$((i + 1)); done
     out=$(./ipps_tool print ipp://127.0.0.1:$P_EVE/ipp/print report.ps 3 || true)
