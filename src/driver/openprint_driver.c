@@ -161,7 +161,9 @@ static void begin_doc(void)
     if(g_doc_open)return;
     pw("%PDF-1.4\n% OpenPrint\n");
     obj_start(1);pw("<< /Type /Catalog /Pages 2 0 R >>\nendobj\n");
-    obj_start(3);pw("<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>\nendobj\n");
+    /* WinAnsiEncoding: the Amiga's ISO-8859-1 letters (160-255) are the same codes there; with no /Encoding
+     * Courier took the font's own StandardEncoding and printed accents as other signs */
+    obj_start(3);pw("<< /Type /Font /Subtype /Type1 /BaseFont /Courier /Encoding /WinAnsiEncoding >>\nendobj\n");
     g_doc_open=1;
 }
 static void begin_page(int picture)

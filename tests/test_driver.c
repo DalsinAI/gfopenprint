@@ -225,6 +225,14 @@ int main(void)
     CHECK(count("/F1 6 Tf") == 1, "not 6 point at fine");
     CHECK(find(out, "0 -12 Td") != NULL, "6 lines to the inch: 12 points expected");
 
+    name = "ISO-8859-1 letters: Courier with WinAnsiEncoding";
+    start(EURO_A4, 66, PICA, SIX_LPI, ASPECT_HORIZ);
+    text("Gr\xfc\xdf" "e, \xe9" "t\xe9 \xa3\n");
+    oap_close(NULL);
+    check_pdf(name);
+    CHECK(count("/BaseFont /Courier /Encoding /WinAnsiEncoding") == 1, "Courier without /Encoding /WinAnsiEncoding: accents print as other signs");
+    CHECK(find(out, "(Gr\\374\\337e, \\351t\\351 \\243) Tj") != NULL, "the letters' codes");
+
     name = "a picture, aspect horizontal: a turned page";
     start(EURO_A4, 66, PICA, SIX_LPI, ASPECT_HORIZ);
     {
