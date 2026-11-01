@@ -132,6 +132,58 @@ static void check_pdf(const char *name)
     CHECK(xr != NULL, "no Pages");
 }
 
+/* The inline picture's bytes: its ASCII85 text up to "~>" decoded, then its runs. Returns how many, or -1. */
+static long picture_bytes(unsigned char *dst, long cap)
+{
+    const char *p = find(out, "/F [/A85 /RL] ID\n"), *end;
+    unsigned char raw[65536];
+    long n = 0, m = 0, i;
+    unsigned long v = 0;
+    int k = 0;
+    if (!p || !(end = find(p, "~>")))
+        return -1;
+    for (p += 17; p < end; p++) {
+        if (*p == 'z' && !k) {
+            memset(raw + n, 0, 4);
+            n += 4;
+            continue;
+        }
+        if (*p < '!' || *p > 'u')
+            continue;                               /* line breaks */
+        v = v * 85 + (unsigned long)(*p - '!');
+        if (++k == 5) {
+            for (i = 3; i >= 0; i--)
+                raw[n + 3 - i] = (unsigned char)(v >> (8 * i));
+            n += 4;
+            v = 0;
+            k = 0;
+        }
+    }
+    if (k) {                                        /* the last group: k-1 bytes */
+        for (i = k; i < 5; i++)
+            v = v * 85 + 84;
+        for (i = 0; i < k - 1; i++)
+            raw[n + i] = (unsigned char)(v >> (8 * (3 - i)));
+        n += k - 1;
+    }
+    for (i = 0; i < n && raw[i] != 128;) {
+        int c = raw[i++];
+        if (c < 128) {
+            if (m + c + 1 > cap)
+                return -1;
+            memcpy(dst + m, raw + i, (size_t)c + 1);
+            m += c + 1;
+            i += c + 1;
+        } else {
+            if (m + 257 - c > cap)
+                return -1;
+            memset(dst + m, raw[i++], (size_t)(257 - c));
+            m += 257 - c;
+        }
+    }
+    return i < n ? m : -1;                          /* -1: no end of the runs */
+}
+
 static long pages(void)
 {
     const char *p = find(out, "/Type /Pages /Count ");
@@ -254,7 +306,14 @@ int main(void)
     CHECK(pages() == 2, "%ld pages, not 2 (the picture's, then the text's)", pages());
     CHECK(count("/MediaBox [0 0 842 595]") == 1 && count("/MediaBox [0 0 595 842]") == 1, "the picture's page turned, the text's upright");
     CHECK(find(out, "BI /W 5 /H 2") != NULL, "the picture's size");
-    CHECK(find(out, "FFFFFFFF0000FFFFFF") != NULL || find(out, "FFFFFFFF0000") != NULL, "the red pixel at xpos 1");
+    {
+        /* white, then from xpos 1 the red pixel and three black ones; two rows */
+        static const unsigned char row[15] = { 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+        unsigned char got[64];
+        long n = picture_bytes(got, sizeof got);
+        CHECK(n == 30 && !memcmp(got, row, 15) && !memcmp(got + 15, row, 15), "the picture's bytes (%ld): white, red at xpos 1, black", n);
+        CHECK(!find(out, "/AHx"), "the picture still in ASCII hex");
+    }
     CHECK(allocs == 0, "%ld AllocMem not freed", allocs);
 
     oap_expunge();
