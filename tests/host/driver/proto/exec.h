@@ -1,4 +1,4 @@
-/* Copyright (c) 2026 AmigaChrome Team. SPDX-License-Identifier: MIT */
+/* Copyright (c) 2026 AmiCradle Team. SPDX-License-Identifier: MIT */
 /* Host tests only: exec's memory calls, from tests/test_driver.c (which counts them). */
 #ifndef PROTO_EXEC_H
 #define PROTO_EXEC_H

@@ -1,4 +1,4 @@
-/* Copyright (c) 2026 AmigaChrome Team. SPDX-License-Identifier: MIT */
+/* Copyright (c) 2026 AmiCradle Team. SPDX-License-Identifier: MIT */
 /* Host tests only: the few AmigaOS types the GFOpenTLS headers use, so the
  * GFOpenTLS backend compiles on x86 or ARM64 cores against
  * tests/host/opentls_host.c. Not the NDK. */

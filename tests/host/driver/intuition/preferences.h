@@ -1,4 +1,4 @@
-/* Copyright (c) 2026 AmigaChrome Team. SPDX-License-Identifier: MIT */
+/* Copyright (c) 2026 AmiCradle Team. SPDX-License-Identifier: MIT */
 /* Host tests only: the printer fields of struct Preferences the driver reads, and their values as the
  * printer.device autodocs and the Printer editor name them. */
 #ifndef INTUITION_PREFERENCES_H

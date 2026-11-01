@@ -1,4 +1,4 @@
-/* Copyright (c) 2026 AmigaChrome Team. SPDX-License-Identifier: MIT */
+/* Copyright (c) 2026 AmiCradle Team. SPDX-License-Identifier: MIT */
 #ifndef OAP_NET_H
 #define OAP_NET_H
 /* The one place GFOpenPrint meets a printer over TCP: a connection to the

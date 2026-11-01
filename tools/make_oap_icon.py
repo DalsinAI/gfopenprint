@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2026 AmigaChrome Team. SPDX-License-Identifier: MIT
+# Copyright (c) 2026 AmiCradle Team. SPDX-License-Identifier: MIT
 """Generate the classic Workbench icon for DEVS:Printers/GFOpenPrint."""
 from __future__ import annotations
 

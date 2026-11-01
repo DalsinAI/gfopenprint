@@ -1,4 +1,4 @@
-/* Copyright (c) 2026 AmigaChrome Team. SPDX-License-Identifier: MIT */
+/* Copyright (c) 2026 AmiCradle Team. SPDX-License-Identifier: MIT */
 /* Host test of GFOpenPrint's printer driver (src/driver/openprint_driver.c), the PDF writer behind
  * printer.device: it is driven as printer.device drives it (Init, Open, ConvFunc for characters, DoSpecial for
  * a new line, Render for a picture, Close), its bytes are caught, and the PDF is checked: every xref entry points

@@ -1,4 +1,4 @@
-/* Copyright (c) 2026 AmigaChrome Team. SPDX-License-Identifier: MIT */
+/* Copyright (c) 2026 AmiCradle Team. SPDX-License-Identifier: MIT */
 #ifndef OAP_TLS_H
 #define OAP_TLS_H
 /* GFOpenPrint's TLS abstraction: IPPS (IPP over TLS). Plain ipp:// never

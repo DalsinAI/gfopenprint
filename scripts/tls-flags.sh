@@ -1,4 +1,4 @@
-# Copyright (c) 2026 AmigaChrome Team. SPDX-License-Identifier: MIT
+# Copyright (c) 2026 AmiCradle Team. SPDX-License-Identifier: MIT
 # Sourced by the build scripts: the TLS backend for the programs that talk
 # to printers (C:OAPDiscover and C:OAVWorker). Sets TLS_FLAGS and TLS_SOURCES.
 # GFOpenTLS (gfopentls.library, API 1) only: its headers are in

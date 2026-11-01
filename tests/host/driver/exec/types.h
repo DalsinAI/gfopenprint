@@ -1,4 +1,4 @@
-/* Copyright (c) 2026 AmigaChrome Team. SPDX-License-Identifier: MIT */
+/* Copyright (c) 2026 AmiCradle Team. SPDX-License-Identifier: MIT */
 /* Host tests only: the AmigaOS types and the few structure fields GFOpenPrint's printer driver
  * (src/driver/openprint_driver.c) uses, so tests/test_driver.c can run it on x86 or ARM64 cores.
  * Not the NDK, and not its layouts: only the names. */

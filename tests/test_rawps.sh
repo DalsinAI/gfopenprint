@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright (c) 2026 AmigaChrome Team. SPDX-License-Identifier: MIT
+# Copyright (c) 2026 AmiCradle Team. SPDX-License-Identifier: MIT
 # Raw PostScript to IPP printers, end to end on x86 or ARM64 cores: GFOpenPrint's own connection, IPP and
 # Print-Job code (OAPIPPSTest's, as C:OAVWorker sends) against stand-in printers on 127.0.0.1 only
 # (tests/host/ps_printer.py, which prints nothing), and CUPS's ippeveprinter too when it is installed.

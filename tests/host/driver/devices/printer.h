@@ -1,4 +1,4 @@
-/* Copyright (c) 2026 AmigaChrome Team. SPDX-License-Identifier: MIT */
+/* Copyright (c) 2026 AmiCradle Team. SPDX-License-Identifier: MIT */
 /* Host tests only: the printer.device command numbers and flags the driver uses. */
 #ifndef DEVICES_PRINTER_H
 #define DEVICES_PRINTER_H

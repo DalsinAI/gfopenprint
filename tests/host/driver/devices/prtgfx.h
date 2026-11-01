@@ -1,4 +1,4 @@
-/* Copyright (c) 2026 AmigaChrome Team. SPDX-License-Identifier: MIT */
+/* Copyright (c) 2026 AmiCradle Team. SPDX-License-Identifier: MIT */
 /* Host tests only: the PrtInfo fields the driver's TRANSFER reads. */
 #ifndef DEVICES_PRTGFX_H
 #define DEVICES_PRTGFX_H
