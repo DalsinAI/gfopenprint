@@ -225,6 +225,14 @@ int main(void)
     CHECK(count("/F1 6 Tf") == 1, "not 6 point at fine");
     CHECK(find(out, "0 -12 Td") != NULL, "6 lines to the inch: 12 points expected");
 
+    name = "text holding %%EOF: the PDF's only %%EOF is its last line";
+    start(EURO_A4, 66, PICA, SIX_LPI, ASPECT_HORIZ);
+    text("%!PS\n%%EOF\n100% done\n");
+    oap_close(NULL);
+    check_pdf(name);
+    CHECK(count("%%EOF") == 1, "%d %%%%EOF in the PDF: the spooler would end the job at the first", count("%%EOF"));
+    CHECK(find(out, "(\\045\\045EOF) Tj") != NULL && find(out, "(100\\045 done) Tj") != NULL, "'%%' not written as \\045");
+
     name = "a picture, aspect horizontal: a turned page";
     start(EURO_A4, 66, PICA, SIX_LPI, ASPECT_HORIZ);
     {
