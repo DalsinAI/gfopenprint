@@ -1,4 +1,4 @@
-/* Copyright (c) 2026 AmigaChrome Team. SPDX-License-Identifier: MIT */
+/* Copyright (c) 2026 AmiCradle Team. SPDX-License-Identifier: MIT */
 /* Host tests only (see exec/types.h here). */
 #ifndef EXEC_MEMORY_H
 #define EXEC_MEMORY_H

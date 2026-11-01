@@ -1,4 +1,4 @@
-/* Copyright (c) 2026 AmigaChrome Team. SPDX-License-Identifier: MIT */
+/* Copyright (c) 2026 AmiCradle Team. SPDX-License-Identifier: MIT */
 /* The printers GFOpenPrint knows (include/oap_printers.h). */
 #include "oap_printers.h"
 #include "oap_discovery.h"

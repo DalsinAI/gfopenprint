@@ -1,5 +1,5 @@
 #!/bin/sh
-# Copyright (c) 2026 AmigaChrome Team. SPDX-License-Identifier: MIT
+# Copyright (c) 2026 AmiCradle Team. SPDX-License-Identifier: MIT
 # GFOpenPrefs' Printing page's own writer and reader (openamigaprefs Printing/src/pr_prefs.c, Look/src/pf_iff.c)
 # against the Print window's paper.c: tests/host/paper_page.c. Skips with no openamigaprefs checkout beside this
 # one; OPENAMIGAPREFS=dir names another. Files only; nothing is printed.

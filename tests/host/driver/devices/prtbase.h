@@ -1,4 +1,4 @@
-/* Copyright (c) 2026 AmigaChrome Team. SPDX-License-Identifier: MIT */
+/* Copyright (c) 2026 AmiCradle Team. SPDX-License-Identifier: MIT */
 /* Host tests only: the PrinterData and PrinterExtendedData fields the driver uses. */
 #ifndef DEVICES_PRTBASE_H
 #define DEVICES_PRTBASE_H

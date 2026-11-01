@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2026 AmigaChrome Team. SPDX-License-Identifier: MIT
+# Copyright (c) 2026 AmiCradle Team. SPDX-License-Identifier: MIT
 """A stand-in IPP printer for GFOpenPrint's tests: it prints nothing.
 
 It answers Get-Printer-Attributes with the formats it is given, and keeps each

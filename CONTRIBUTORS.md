@@ -15,7 +15,7 @@ We are The AmiCradle Team, who build AmiCradle alongside SacredTrees:
 ## Copyright holder
 
 Original GFOpenPrint and GFOpenView code, documentation and icon art are
-Copyright (c) 2026 AmigaChrome Team, released under the MIT licence (`LICENSE`).
+Copyright (c) 2026 AmiCradle Team, released under the MIT licence (`LICENSE`).
 GFOpenPrint was under the BSD 2-Clause licence until 4 October 2026.
 
 ## From our other repositories

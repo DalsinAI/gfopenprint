@@ -1,4 +1,4 @@
-/* Copyright (c) 2026 AmigaChrome Team. SPDX-License-Identifier: MIT */
+/* Copyright (c) 2026 AmiCradle Team. SPDX-License-Identifier: MIT */
 #ifndef OAP_GT_H
 #define OAP_GT_H
 /* What GFOpenPrint's GadTools windows share: the screen, its font (or

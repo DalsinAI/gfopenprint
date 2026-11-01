@@ -1,4 +1,4 @@
-/* Copyright (c) 2026 AmigaChrome Team. SPDX-License-Identifier: MIT */
+/* Copyright (c) 2026 AmiCradle Team. SPDX-License-Identifier: MIT */
 /* The paper the Print window starts on, and the sizes it offers (25 October 2026: the paper set on GFOpenPrefs'
  * Printing page didn't reach the Print window). Plain C, tested on the host by tests/test_paper.c.
  *

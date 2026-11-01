@@ -1,4 +1,4 @@
-/* Copyright (c) 2026 AmigaChrome Team. SPDX-License-Identifier: MIT */
+/* Copyright (c) 2026 AmiCradle Team. SPDX-License-Identifier: MIT */
 /* GFOpenPrefs' Printing page's own code against the Print window's (src/core/paper.c), on the host:
  *   - for every paper the page lists, its pr_put (openamigaprefs Printing/src/pr_prefs.c) writes printer.prefs as
  *     Use or Save does, from GFOpenPrinter's file and from printer.device's no-file state, and paper.c reads it back:

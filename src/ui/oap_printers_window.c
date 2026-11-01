@@ -1,4 +1,4 @@
-/* Copyright (c) 2026 AmigaChrome Team. SPDX-License-Identifier: MIT */
+/* Copyright (c) 2026 AmiCradle Team. SPDX-License-Identifier: MIT */
 /* GFOpenPrint's Printers and Queue window (C:OAPPrinters), in GadTools
  * (We, 4 October 2026: OS 3.x applications use GadTools or MUI, not
  * ReAction). It replaces the separate printer browser and queue window, as

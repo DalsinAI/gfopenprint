@@ -1,4 +1,4 @@
-/* Copyright (c) 2026 AmigaChrome Team. SPDX-License-Identifier: MIT */
+/* Copyright (c) 2026 AmiCradle Team. SPDX-License-Identifier: MIT */
 /* The printer chosen in Printers and Queue ("Use for printing"), for
  * GFOpenView: ENV:GFOpenPrint/PrinterURI, else its ENVARC: copy, else the
  * names used before 4 October 2026. */

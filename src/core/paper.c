@@ -1,4 +1,4 @@
-/* Copyright (c) 2026 AmigaChrome Team. SPDX-License-Identifier: MIT */
+/* Copyright (c) 2026 AmiCradle Team. SPDX-License-Identifier: MIT */
 /* The paper the Print window starts on, and the sizes it offers (include/oap_paper.h). Plain C: no Amiga calls,
  * so tests/test_paper.c checks it on the host; the Print window (src/ui/oap_print_requester.c) reads the files
  * and the variable and hands their bytes here. */

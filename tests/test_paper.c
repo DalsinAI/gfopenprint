@@ -1,4 +1,4 @@
-/* Copyright (c) 2026 AmigaChrome Team. SPDX-License-Identifier: MIT */
+/* Copyright (c) 2026 AmiCradle Team. SPDX-License-Identifier: MIT */
 /* Host checks for where the Print window's paper starts and the sizes it offers (src/core/paper.c), and their IPP
  * media names (src/core/ipp.c). Each paper's Print-Job request start is written to build/paper-<media>.ipp: files
  * only, nothing is sent anywhere.
