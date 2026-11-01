@@ -25,7 +25,7 @@ static int ipp_is(const unsigned char *b,size_t n,const char *name,const char *w
     return v&&len==strlen(want)&&!memcmp(v,want,len);
 }
 
-/* What OpenPrint sends a printer for a program's own PostScript (27 October 2026). */
+/* What GFOpenPrint sends a printer for a program's own PostScript (27 October 2026). */
 static void raw_postscript(void)
 {
     static const char ps[]="%!PS-Adobe-3.0\n%%Creator: PageStream\n%%Title: (Quarterly report)\n%%EndComments\nshowpage\n";

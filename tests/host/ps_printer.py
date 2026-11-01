@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) 2026 AmigaChrome Team. SPDX-License-Identifier: MIT
-"""A stand-in IPP printer for OpenPrint's tests: it prints nothing.
+"""A stand-in IPP printer for GFOpenPrint's tests: it prints nothing.
 
 It answers Get-Printer-Attributes with the formats it is given, and keeps each
 Print-Job's document as it came (spool/job-N.ps or .pdf) with the request's
@@ -179,7 +179,7 @@ def main():
     p.add_argument("--spool", required=True)
     p.add_argument("--formats", default="application/pdf,application/postscript")
     p.add_argument("--mode", choices=("normal", "refuse", "silent"), default="normal")
-    p.add_argument("--name", default="OpenPrint stand-in")
+    p.add_argument("--name", default="GFOpenPrint stand-in")
     p.add_argument("--log")
     args = p.parse_args()
     printer = Printer(args)

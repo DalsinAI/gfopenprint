@@ -26,7 +26,7 @@ struct PrinterData *PD;
 struct ExecBase *SysBase;
 extern struct PrinterExtendedData oap_ped;
 
-char oap_printer_name[] = "OpenPrint";
+char oap_printer_name[] = "GFOpenPrint";
 static UBYTE special_cmd[] = { 0xff, 0 };
 #define S (STRPTR)special_cmd
 STRPTR oap_commands[77] = {
@@ -162,7 +162,7 @@ static void reset_state(void)
 static void begin_doc(void)
 {
     if(g_doc_open)return;
-    pw("%PDF-1.4\n% OpenPrint\n");
+    pw("%PDF-1.4\n% GFOpenPrint\n");
     obj_start(1);pw("<< /Type /Catalog /Pages 2 0 R >>\nendobj\n");
     /* WinAnsiEncoding: the Amiga's ISO-8859-1 letters (160-255) are the same codes there; with no /Encoding
      * Courier took the font's own StandardEncoding and printed accents as other signs */

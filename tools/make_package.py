@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
-"""OpenPrint as an Amiga package: a drawer to run Installer from, and
+"""GFOpenPrint as an Amiga package: a drawer to run Installer from, and
 the same as an LhA archive.
 
     python3 tools/make_package.py [--version 0.3] [--lha-module DIR] [--out build/package]
 
 We, 4 October 2026: "it needs an amiga installer, or something like it".
-The drawer holds the Installer script (package/Install-OpenPrint) with its
+The drawer holds the Installer script (package/Install-GFOpenPrint) with its
 icon, the ReadMe, and what the script installs, laid out as it goes:
   C/          the five commands
-  Devs/       oapspool.device, Printers/OpenPrint
+  Devs/       oapspool.device, Printers/GFOpenPrint
   WBStartup/  the spooler
-  Drawer/     OpenView, Printers and Queue, Picture.png, TestPage.pdf
+  Drawer/     GFOpenView, Printers and Queue, Picture.png, TestPage.pdf
 The programs come from build/amigaos3 (run build-amiga.sh, build-browser.sh
 and build-viewer.sh first). The icons are classic four-colour icons, made
 here, so the package looks the same on every Workbench from 2.04 on.
---lha-module names the folder holding AmigaChrome's lha_archive.py; without
+--lha-module names the folder holding AmiCradle's lha_archive.py; without
 it only the drawer is made.
 """
 from __future__ import annotations
@@ -248,7 +248,7 @@ def test_png(w: int = 320, h: int = 200) -> bytes:
 
 def test_pdf(title: str) -> bytes:
     """One A4 page with a heading, in plain PDF 1.4."""
-    text = f"BT /F1 24 Tf 72 760 Td ({title}) Tj ET\nBT /F1 12 Tf 72 730 Td (If this is on paper, OpenPrint works.) Tj ET\n".encode()
+    text = f"BT /F1 24 Tf 72 760 Td ({title}) Tj ET\nBT /F1 12 Tf 72 730 Td (If this is on paper, GFOpenPrint works.) Tj ET\n".encode()
     objs = [b"<< /Type /Catalog /Pages 2 0 R >>",
             b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
             b"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>",
@@ -267,35 +267,35 @@ def test_pdf(title: str) -> bytes:
     return bytes(out)
 
 
-README = """OpenPrint @VERSION@
+README = """GFOpenPrint @VERSION@
 ==================
 
-OpenPrint prints from your Amiga to printers on your network that take
+GFOpenPrint prints from your Amiga to printers on your network that take
 PDF (IPP: most office printers since about 2012), and saves documents as PDF
 files. It needs AmigaOS 3.0 or later and a TCP/IP stack (bsdsocket.library)
 to reach printers; saving PDF files needs neither.
 
 Installing
 ----------
-Double-click "Install OpenPrint". It puts:
-  C:              OpenPrint, OAPPrinters, OAPDiscover, OpenView,
+Double-click "Install GFOpenPrint". It puts:
+  C:              GFOpenPrint, OAPPrinters, OAPDiscover, GFOpenView,
                   OAVWorker
   DEVS:           oapspool.device
-  DEVS:Printers   the OpenPrint printer driver
+  DEVS:Printers   the GFOpenPrint printer driver
   SYS:WBStartup   the spooler (if you say yes)
-and a drawer "OpenPrint" (in SYS:Utilities unless you choose another
-place) with OpenView, Printers and Queue, Picture.png and TestPage.pdf.
+and a drawer "GFOpenPrint" (in SYS:Utilities unless you choose another
+place) with GFOpenView, Printers and Queue, Picture.png and TestPage.pdf.
 
 Trying it
 ---------
-1. Open the OpenPrint drawer and double-click "Printers and Queue". It
+1. Open the GFOpenPrint drawer and double-click "Printers and Queue". It
    searches your network; choose a printer marked Ready and click "Use for
    printing".
-2. Double-click Picture.png. OpenView shows it on the page; set Paper,
+2. Double-click Picture.png. GFOpenView shows it on the page; set Paper,
    Turn and Size, then choose Print... . The Print window opens on the page.
 3. Double-click TestPage.pdf for a PDF: Print... sends it as it is.
 4. Programs that print through printer.device: in Prefs/Printer choose the
-   printer type OpenPrint, the port "device" and oapspool.device unit 0.
+   printer type GFOpenPrint, the port "device" and oapspool.device unit 0.
    Their pages then come to the Print window.
 
 Nothing is sent to a printer until you click Print in the Print window. An
@@ -308,45 +308,45 @@ Licence: MIT, Copyright (c) 2026 AmigaChrome Team (see the source repository).
 # ---------------------------------------------------------------- the package
 
 def build(version: str, out: Path) -> tuple[Path, list[tuple[str, bytes]]]:
-    need = ["OpenPrint", "OAPPrinters", "OAPDiscover", "OpenView", "OAVWorker", "OAPSpooler",
-            "oapspool.device", "OpenPrint.driver"]
+    need = ["GFOpenPrint", "OAPPrinters", "OAPDiscover", "GFOpenView", "OAVWorker", "OAPSpooler",
+            "oapspool.device", "GFOpenPrint.driver"]
     missing = [n for n in need if not (BUILD / n).is_file()]
     if missing:
         raise SystemExit(f"build these first (build-amiga.sh, build-browser.sh, build-viewer.sh): {', '.join(missing)}")
     files: list[tuple[str, bytes]] = []
     add = lambda rel, data: files.append((rel, data))
     date = time.strftime("%d.%m.%Y").lstrip("0").replace(".0", ".")
-    script = (ROOT / "package" / "Install-OpenPrint").read_text(encoding="latin-1")
-    add("Install OpenPrint", script.replace("@VERSION@", version).replace("@DATE@", date).encode("latin-1"))
-    add("Install OpenPrint.info", icon(WBPROJECT, "install", "Installer",
-                                            ["APPNAME=OpenPrint", "MINUSER=NOVICE", "DEFUSER=NOVICE", "LOGFILE=T:OpenPrint-install.log"]))
+    script = (ROOT / "package" / "Install-GFOpenPrint").read_text(encoding="latin-1")
+    add("Install GFOpenPrint", script.replace("@VERSION@", version).replace("@DATE@", date).encode("latin-1"))
+    add("Install GFOpenPrint.info", icon(WBPROJECT, "install", "Installer",
+                                            ["APPNAME=GFOpenPrint", "MINUSER=NOVICE", "DEFUSER=NOVICE", "LOGFILE=T:GFOpenPrint-install.log"]))
     add("ReadMe", README.replace("@VERSION@", version).encode("latin-1"))
     add("ReadMe.info", icon(WBPROJECT, "page", "SYS:Utilities/MultiView"))
-    for name in ("OpenPrint", "OAPPrinters", "OAPDiscover", "OpenView", "OAVWorker"):
+    for name in ("GFOpenPrint", "OAPPrinters", "OAPDiscover", "GFOpenView", "OAVWorker"):
         add(f"C/{name}", (BUILD / name).read_bytes())
     add("Devs/oapspool.device", (BUILD / "oapspool.device").read_bytes())
-    add("Devs/Printers/OpenPrint", (BUILD / "OpenPrint.driver").read_bytes())
+    add("Devs/Printers/GFOpenPrint", (BUILD / "GFOpenPrint.driver").read_bytes())
     add("WBStartup/OAPSpooler", (BUILD / "OAPSpooler").read_bytes())
     add("WBStartup/OAPSpooler.info", icon(WBTOOL, "printer", tool_types=["DONOTWAIT"], stack=8192))
     # the drawer the script installs: the two programs people open, and something to print
-    add("Icons/OpenPrint.info", icon(WBDRAWER, "drawer", window=(420, 150)))   # no icon of its own: Workbench hides it
-    add("Drawer/OpenView", (BUILD / "OpenView").read_bytes())
-    add("Drawer/OpenView.info", icon(WBTOOL, "viewer", stack=65536))
+    add("Icons/GFOpenPrint.info", icon(WBDRAWER, "drawer", window=(420, 150)))   # no icon of its own: Workbench hides it
+    add("Drawer/GFOpenView", (BUILD / "GFOpenView").read_bytes())
+    add("Drawer/GFOpenView.info", icon(WBTOOL, "viewer", stack=65536))
     add("Drawer/Printers and Queue", (BUILD / "OAPPrinters").read_bytes())
     add("Drawer/Printers and Queue.info", icon(WBTOOL, "printer", stack=65536))
     add("Drawer/Picture.png", test_png())
-    add("Drawer/Picture.png.info", icon(WBPROJECT, "picture", "C:OpenView", stack=65536))
-    add("Drawer/TestPage.pdf", test_pdf("OpenPrint test page"))
-    add("Drawer/TestPage.pdf.info", icon(WBPROJECT, "pdf", "C:OpenView", stack=65536))
+    add("Drawer/Picture.png.info", icon(WBPROJECT, "picture", "C:GFOpenView", stack=65536))
+    add("Drawer/TestPage.pdf", test_pdf("GFOpenPrint test page"))
+    add("Drawer/TestPage.pdf.info", icon(WBPROJECT, "pdf", "C:GFOpenView", stack=65536))
 
-    top = out / "OpenPrint"
+    top = out / "GFOpenPrint"
     if top.exists():
         shutil.rmtree(top)
     for rel, data in files:
         p = top / rel
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_bytes(data)
-    (out / "OpenPrint.info").write_bytes(icon(WBDRAWER, "drawer", window=(420, 160)))
+    (out / "GFOpenPrint.info").write_bytes(icon(WBDRAWER, "drawer", window=(420, 160)))
     files = os32_icons(top, out, files)
     return top, files
 
@@ -357,12 +357,12 @@ def build(version: str, out: Path) -> tuple[Path, list[tuple[str, bytes]]]:
 # picture becomes an OS 3.5 colour icon with the classic one as fallback,
 # written by ACBuild's amiga-icon.js (node). Drawers use Boxie's OS 3.2 drawer
 # (MIT, Damir Sijakovic; LICENCE.Boxie ships beside the icons).
-ACBUILD_ICON_JS = Path(os.environ.get("ACBUILD_ICON_JS", Path.home() / "AmigaChrome/launcher/acbuild-tools/amiga-icon.js"))
-BOXIE = Path(os.environ.get("BOXIE_ICONS", Path.home() / "AmigaChrome/resources/icons/collections/boxie"))
-ART_FOR = {"Install OpenPrint.info": "install", "ReadMe.info": "page", "WBStartup/OAPSpooler.info": "printer",
-           "Drawer/OpenView.info": "viewer", "Drawer/Printers and Queue.info": "printer",
+ACBUILD_ICON_JS = Path(os.environ.get("ACBUILD_ICON_JS", Path.home() / "AmiCradle/launcher/acbuild-tools/amiga-icon.js"))
+BOXIE = Path(os.environ.get("BOXIE_ICONS", Path.home() / "AmiCradle/resources/icons/collections/boxie"))
+ART_FOR = {"Install GFOpenPrint.info": "install", "ReadMe.info": "page", "WBStartup/OAPSpooler.info": "printer",
+           "Drawer/GFOpenView.info": "viewer", "Drawer/Printers and Queue.info": "printer",
            "Drawer/Picture.png.info": "picture", "Drawer/TestPage.pdf.info": "pdf"}
-DRAWERS = ["Icons/OpenPrint.info"]
+DRAWERS = ["Icons/GFOpenPrint.info"]
 
 
 def os32_icons(top: Path, out: Path, files: list[tuple[str, bytes]]) -> list[tuple[str, bytes]]:
@@ -381,7 +381,7 @@ def os32_icons(top: Path, out: Path, files: list[tuple[str, bytes]]) -> list[tup
             jobs.append({"info": str(top / rel), "rgba": str(rgba), "w": icon_art.W, "h": icon_art.H})
         for rel in DRAWERS:
             jobs.append({"info": str(top / rel), "from": str(drawer)})
-        jobs.append({"info": str(out / "OpenPrint.info"), "from": str(drawer)})
+        jobs.append({"info": str(out / "GFOpenPrint.info"), "from": str(drawer)})
         (Path(tmp) / "jobs.json").write_text(json.dumps(jobs))
         subprocess.run(["node", str(ROOT / "tools" / "os32_icons.js"), str(ACBUILD_ICON_JS), str(Path(tmp) / "jobs.json")],
                        check=True, stdout=subprocess.DEVNULL)
@@ -396,7 +396,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--version", default="0.3")
     ap.add_argument("--out", default=str(ROOT / "build" / "package"))
-    ap.add_argument("--lha-module", help="the folder with AmigaChrome's lha_archive.py")
+    ap.add_argument("--lha-module", help="the folder with AmiCradle's lha_archive.py")
     a = ap.parse_args()
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -405,9 +405,9 @@ def main() -> int:
     if a.lha_module:
         sys.path.insert(0, a.lha_module)
         import lha_archive
-        members = [lha_archive.Member(f"OpenPrint/{rel}", data) for rel, data in files]
-        members.append(lha_archive.Member("OpenPrint.info", (out / "OpenPrint.info").read_bytes()))
-        archive = lha_archive.write(out / "OpenPrint.lha", members)
+        members = [lha_archive.Member(f"GFOpenPrint/{rel}", data) for rel, data in files]
+        members.append(lha_archive.Member("GFOpenPrint.info", (out / "GFOpenPrint.info").read_bytes()))
+        archive = lha_archive.write(out / "GFOpenPrint.lha", members)
         print(f"{archive} ({archive.stat().st_size} bytes)")
     return 0
 

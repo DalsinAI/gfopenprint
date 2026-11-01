@@ -1,22 +1,22 @@
 /* Copyright (c) 2026 AmigaChrome Team. SPDX-License-Identifier: MIT */
 #ifndef OAP_TLS_H
 #define OAP_TLS_H
-/* OpenPrint's TLS abstraction: IPPS (IPP over TLS). Plain ipp:// never
+/* GFOpenPrint's TLS abstraction: IPPS (IPP over TLS). Plain ipp:// never
  * comes here and needs no TLS library at all.
  *
- * The backend, opened in each task that asks: opentls.library (OpenTLS, on
+ * The backend, opened in each task that asks: gfopentls.library (GFOpenTLS, on
  * BearSSL; MIT licensed and free), API 1. On x86 or ARM64 cores (the host
- * tests) OpenTLS's own code built for the host, or a test build of its
- * calls on OpenSSL, stands in for opentls.library, so the backend's code
- * runs against a real printer emulator. ENV:OpenPrint/TLS set to "none"
+ * tests) GFOpenTLS's own code built for the host, or a test build of its
+ * calls on OpenSSL, stands in for gfopentls.library, so the backend's code
+ * runs against a real printer emulator. ENV:GFOpenPrint/TLS set to "none"
  * makes a task act as if there were no TLS library (for testing). (Until
  * 19 October 2026 AmiSSL 5 was a second backend; the Team's programs are
- * OpenTLS only now.)
+ * GFOpenTLS only now.)
  *
  * Certificates: a printer's certificate is accepted when an authority the
  * library trusts signed it for the printer's name, or when it is the very
  * certificate the user chose to trust for that printer (its SHA-256
- * fingerprint, remembered in ENVARC:OpenPrint/TrustedPrinters by host and
+ * fingerprint, remembered in ENVARC:GFOpenPrint/TrustedPrinters by host and
  * port). Printers mostly make their own (self-signed) certificates, so
  * the second is the usual case: the first connection reports
  * OAP_CERT_ASK with the fingerprint, Printers and Queue asks "Trust this
@@ -46,7 +46,7 @@ typedef struct OAPTlsInfo {
     char subject[128];                 /* who it is issued to, when the backend says */
     char problem[200];                 /* the backend's own words, when not OK */
     char protocol[16], cipher[64];
-    char backend[16];                  /* "OpenTLS" */
+    char backend[16];                  /* "GFOpenTLS" */
 } OAPTlsInfo;
 
 /* 1 when the verdict lets a print job (or a password) go to the printer. */
@@ -66,7 +66,7 @@ typedef struct OAPTls OAPTls;
 /* 1 when a TLS library is open in this task; otherwise 0 and `why` says,
  * in words, what to install. Opens it on first use. */
 int oap_tls_available(char *why, size_t why_cap);
-/* "OpenTLS", or "" when none is open. */
+/* "GFOpenTLS", or "" when none is open. */
 const char *oap_tls_backend(void);
 /* Closes the TLS library (each task, at the end, after oap_net_stop's peers). */
 void oap_tls_stop(void);
@@ -84,7 +84,7 @@ long oap_tls_write(OAPTls *t, const void *data, size_t n, unsigned millis);
 void oap_tls_end(OAPTls *t);
 
 /* ---- remembered certificates (src/tls/trust.c) ---------------------- */
-#define OAP_TRUST_VAR "OpenPrint/TrustedPrinters"
+#define OAP_TRUST_VAR "GFOpenPrint/TrustedPrinters"
 /* One line per printer: host:port <TAB> fingerprint <TAB> who it is issued to. */
 int oap_trust_lookup(const char *trust_key, unsigned char sha256[32]);
 int oap_trust_remember(const char *trust_key, const char *fingerprint, const char *subject);

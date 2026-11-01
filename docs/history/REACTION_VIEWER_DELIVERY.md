@@ -1,14 +1,14 @@
-# OpenView / OpenPrint delivery contract
+# GFOpenView / GFOpenPrint delivery contract
 
 **4 October 2026: We changed the toolkit.** OS 3.x applications use GadTools or MUI, not ReAction, so
-OpenView, the Print requester and the Printers and Queue window are GadTools now; the rest of this
+GFOpenView, the Print requester and the Printers and Queue window are GadTools now; the rest of this
 contract stands.
 
 Our accepted scope, 3 October 2026: deliver all five application phases,
 with a native ReAction UI, a datatype-based universal viewer, good rendering,
 image-to-PDF/printing, a shared durable queue and ARexx automation. The working
-name of the viewer is OpenView. This is not a browser application and must
-remain usable without AmigaChrome or a Linux conversion service.
+name of the viewer is GFOpenView. This is not a browser application and must
+remain usable without AmiCradle or a Linux conversion service.
 
 ## Non-negotiable behaviour
 
@@ -59,7 +59,7 @@ An installed datatype is a dependency, not an automatic test pass.
 
 ## Architecture
 
-OpenView ReAction UI and ARexx -> shared commands -> immutable job request
+GFOpenView ReAction UI and ARexx -> shared commands -> immutable job request
 -> native worker -> provider -> page composition -> output backend -> OAP queue.
 DataType objects are hosted with AddDTObject/RemoveDTObject, not handed to
 layout.gadget as ordinary owned children. Input data and the printer service

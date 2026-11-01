@@ -1,5 +1,5 @@
 /* Copyright (c) 2026 AmigaChrome Team. SPDX-License-Identifier: MIT */
-/* OpenPrint's GadTools helpers (include/oap_gt.h). */
+/* GFOpenPrint's GadTools helpers (include/oap_gt.h). */
 #include "oap_gt.h"
 #include <exec/libraries.h>
 #include <graphics/gfxbase.h>

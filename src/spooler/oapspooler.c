@@ -103,7 +103,7 @@ static int head_is(const char *s)
     return 1;
 }
 static int is_pdf(void){return head_is("%PDF");}
-/* What a job is, from its first bytes: a PDF (OpenPrint's driver), PostScript, PCL (or PJL), or raw printer
+/* What a job is, from its first bytes: a PDF (GFOpenPrint's driver), PostScript, PCL (or PJL), or raw printer
  * data (as oap_document_format, src/core/job.c). PDFs and PostScript are printed from the queue (PostScript to
  * printers that say they take it); PCL and other data are kept, not sent. */
 static void kind(const char **ext,const char **format,const char **title)
@@ -181,8 +181,8 @@ int main(void)
     AddPort(port);
     if(me)me->pr_WindowPtr=(APTR)-1;
     ensure_queue_dir();
-    /* Ctrl-C ends it (12 Oct 2026): OpenBench asks the programs it started from SYS:WBStartup to quit that way
-     * before it quits, as their code is its to unload, and a spooler that never ended kept OpenBench running.
+    /* Ctrl-C ends it (12 Oct 2026): GFOpenBench asks the programs it started from SYS:WBStartup to quit that way
+     * before it quits, as their code is its to unload, and a spooler that never ended kept GFOpenBench running.
      * The port goes first, under Forbid as oapspool.device finds it, so no request comes after the last one is
      * answered. A job not yet ended keeps its .pdf but gets no .job, so it isn't queued half written. */
     for(;;){

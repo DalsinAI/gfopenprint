@@ -12,7 +12,7 @@ int main(void)
  f=fopen("T:OAVRequestSmoke.req","w");if(!f)return 20;
  fputs("schema=3\naction=send\nsource=Work:OpenPrint.pdf\nuri=invalid\nprint_options=1\ncopies=2\nprint_paper=4\norientation=1\ncolor=0\nduplex=2\npage_start=2\npage_end=4\n",f);fclose(f);
  if(!oav_read_request("T:OAVRequestSmoke.req",&back)||!back.has_print_options||back.print.copies!=2||back.print.paper!=OAP_PAPER_A5||back.print.orientation!=1||back.print.color!=0||back.print.duplex!=2||back.print.page_start!=2||back.print.page_end!=4)ok=0;
- f=fopen("T:OAVRequestSmoke.req","w");if(!f)return 20;     /* a paper OpenPrint doesn't have is refused */
+ f=fopen("T:OAVRequestSmoke.req","w");if(!f)return 20;     /* a paper GFOpenPrint doesn't have is refused */
  fputs("schema=3\naction=send\nsource=Work:OpenPrint.pdf\nuri=invalid\nprint_options=1\ncopies=1\nprint_paper=5\n",f);fclose(f);
  if(oav_read_request("T:OAVRequestSmoke.req",&back))ok=0;
  f=fopen("T:OAVRequestSmoke.req","w");if(!f)return 20;

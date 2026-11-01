@@ -1,10 +1,10 @@
 /* Copyright (c) 2026 AmigaChrome Team. SPDX-License-Identifier: MIT */
-/* The OpenTLS backend of the TLS abstraction (tls_backend.h):
- * opentls.library, API version 1 (DalsinAI/openamigatls,
+/* The GFOpenTLS backend of the TLS abstraction (tls_backend.h):
+ * gfopentls.library, API version 1 (DalsinAI/openamigatls,
  * docs/AutoDocs-OpenTLS.md; the headers are in third_party/opentls).
  *
  * Bytes move through an I/O hook (OT_SetIOHook) over the same socket, so
- * every wait stays bounded the way OpenPrint's plain connections are: the
+ * every wait stays bounded the way GFOpenPrint's plain connections are: the
  * hook waits up to the caller's time and answers OTERR_WOULDBLOCK when
  * nothing came. A remembered printer certificate is pinned
  * (OT_PinCertificate); otherwise the library checks the chain, the dates
@@ -66,7 +66,7 @@ static int ot_open(char *why, size_t cap)
 #ifdef __amigaos__
     OpenTLSBase = OpenLibrary((CONST_STRPTR)OPENTLSLIB_NAME, OPENTLSLIB_VERSION);
     if (!OpenTLSBase) {
-        snprintf(why, cap, "opentls.library isn't installed");
+        snprintf(why, cap, "gfopentls.library isn't installed");
         return 0;
     }
 #endif
@@ -77,7 +77,7 @@ static int ot_open(char *why, size_t cap)
         config.CAFile = (STRPTR)ca;
     ctx = OT_NewContext(&config, &error);
     if (!ctx) {
-        snprintf(why, cap, "opentls.library: %s", (const char *)OT_ErrorString(error));
+        snprintf(why, cap, "gfopentls.library: %s", (const char *)OT_ErrorString(error));
         ot_close();
         return 0;
     }
@@ -233,5 +233,5 @@ static long ot_write(void *session, const void *data, size_t n, unsigned millis)
 }
 
 const OAPTlsBackend oap_tls_opentls = {
-    "OpenTLS", 1, ot_open, ot_close, ot_start, ot_read, ot_write, ot_end
+    "GFOpenTLS", 1, ot_open, ot_close, ot_start, ot_read, ot_write, ot_end
 };

@@ -5,7 +5,7 @@
 #include "oap_tls.h"
 
 /* The second try of a LOOK connection, for a backend that cannot finish a
- * handshake it has refused (OpenTLS): no checks at all. Only src/net/conn.c
+ * handshake it has refused (GFOpenTLS): no checks at all. Only src/net/conn.c
  * asks for it, and only after a LOOK connection was refused for its
  * certificate. */
 #define OAP_TLS_ANY 2
@@ -40,7 +40,7 @@ int oap_tls_look_reconnects(void);
  * it ends ("2036-10-05"); 1 when it could be read. */
 int oap_cert_der_names(const unsigned char *der, size_t len, char *subject, size_t subject_cap,
                        char *until, size_t until_cap);
-/* Reads a setting for testing (ENV:OpenPrint/<name> on the Amiga, the
+/* Reads a setting for testing (ENV:GFOpenPrint/<name> on the Amiga, the
  * environment variable OAP_<NAME> elsewhere); 1 when set. */
 int oap_tls_setting(const char *name, char *out, size_t cap);
 #endif

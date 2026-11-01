@@ -1,14 +1,14 @@
 /* Copyright (c) 2026 AmigaChrome Team. SPDX-License-Identifier: MIT */
-/* OpenPrint's Printers and Queue window (C:OAPPrinters), in GadTools
+/* GFOpenPrint's Printers and Queue window (C:OAPPrinters), in GadTools
  * (We, 4 October 2026: OS 3.x applications use GadTools or MUI, not
  * ReAction). It replaces the separate printer browser and queue window, as
  * the 3 October review set out:
  *   - printers by name, with their state and whether they take PDF; the
  *     address shows only for the printer selected;
  *   - discovery reports its progress and ends with a count or a reason;
- *   - printers found are remembered (ENV:OpenPrint/Printers), so the
+ *   - printers found are remembered (ENV:GFOpenPrint/Printers), so the
  *     Print requester offers them without a new search;
- *   - one queue for every job, from printer.device and OpenView alike;
+ *   - one queue for every job, from printer.device and GFOpenView alike;
  *   - menus with Amiga-key shortcuts, and a key on every button.
  * The lists use the screen's own text, as every other part of the window
  * does: their columns are lined up by measuring it (0.4, 10 October 2026;
@@ -17,7 +17,7 @@
  * can be used for printing. An ipps:// printer with its own certificate
  * (most printers make one) is trusted here, by asking: Use for printing
  * shows its fingerprint and asks "Trust this printer?", remembers the
- * answer (ENVARC:OpenPrint/TrustedPrinters), checks it again, and then
+ * answer (ENVARC:GFOpenPrint/TrustedPrinters), checks it again, and then
  * uses it. That includes a certificate made for another name or with odd
  * dates (most printers' are made for their own host name, not the .local
  * one): trusted, it is pinned by its fingerprint, which takes the place of
@@ -320,7 +320,7 @@ static void fill_printers(void)
 static void load_default(void)
 {
     P.default_uri[0] = 0;
-    if (GetVar((STRPTR)"OpenPrint/PrinterURI", (STRPTR)P.default_uri, sizeof(P.default_uri), GVF_GLOBAL_ONLY) <= 0)
+    if (GetVar((STRPTR)"GFOpenPrint/PrinterURI", (STRPTR)P.default_uri, sizeof(P.default_uri), GVF_GLOBAL_ONLY) <= 0)
         GetVar((STRPTR)"OpenAmigaPrint/PrinterURI", (STRPTR)P.default_uri, sizeof(P.default_uri), GVF_GLOBAL_ONLY);   /* saved before the rename */
 }
 
@@ -465,7 +465,7 @@ static int ask_trust(OAPPrinter *p)
                  "Issued to: %.60s\n"
                  "Fingerprint (SHA-256):\n%s\n%s\n\n"
                  "If it matches the one on the printer's own status page\n"
-                 "or panel, trust it: OpenPrint then prints to it\n"
+                 "or panel, trust it: GFOpenPrint then prints to it\n"
                  "encrypted, and refuses any other certificate for it.",
                  p->name, u.host, p->cert == OAP_CERT_NAME ? "made for another name" : "outside its dates",
                  p->cert_subject[0] ? p->cert_subject : "(no name)", fp1, fp2);
@@ -477,7 +477,7 @@ static int ask_trust(OAPPrinter *p)
                  "Issued to: %.60s\n"
                  "Fingerprint (SHA-256):\n%s\n%s\n\n"
                  "If it matches the one on the printer's own status page\n"
-                 "or panel, trust it: OpenPrint then prints to it\n"
+                 "or panel, trust it: GFOpenPrint then prints to it\n"
                  "encrypted, and refuses any other certificate for it.",
                  p->name, u.host, p->cert_subject[0] ? p->cert_subject : "(no name)", fp1, fp2);
     es.es_StructSize = sizeof(es);
@@ -489,7 +489,7 @@ static int ask_trust(OAPPrinter *p)
     if (answer != 0)                           /* the left button (1), or no answer: don't */
         return 0;
     if (!oap_trust_remember(key, p->fingerprint, p->cert_subject)) {
-        show_status("Couldn't save the trusted certificate to ENVARC:OpenPrint/TrustedPrinters");
+        show_status("Couldn't save the trusted certificate to ENVARC:GFOpenPrint/TrustedPrinters");
         return 0;
     }
     return 1;
@@ -501,7 +501,7 @@ static void use_printer(void)
     char error[256], text[300];
     if (p && needs_trust(p) && p->pdf == OAP_PDF_YES) {
         if (!ask_trust(p)) {
-            show_status("Not trusted: OpenPrint won't print to it");
+            show_status("Not trusted: GFOpenPrint won't print to it");
             return;
         }
         copy(P.use_after, sizeof(P.use_after), p->uri);
@@ -513,7 +513,7 @@ static void use_printer(void)
         show_status("Only printers verified to take PDF can be used for printing");
         return;
     }
-    if (!oap_preferences_store("OpenPrint/PrinterURI", p->uri, error, sizeof(error))) {
+    if (!oap_preferences_store("GFOpenPrint/PrinterURI", p->uri, error, sizeof(error))) {
         show_status(error);
         return;
     }
@@ -534,14 +534,14 @@ static void test_page(void)
             show_status("Trust the printer first: click Use for printing");
         return;
     }
-    if (!oap_pdf_write_demo("T:OpenPrint-TestPage.pdf", "OpenPrint test page")) {
+    if (!oap_pdf_write_demo("T:GFOpenPrint-TestPage.pdf", "GFOpenPrint test page")) {
         show_status("Couldn't write the test page to T:");
         return;
     }
-    oap_program_path("OpenPrint", program, sizeof(program));
-    snprintf(cmd, sizeof(cmd), "\"%s\" \"T:OpenPrint-TestPage.pdf\" \"%s\"", program, p->uri);
+    oap_program_path("GFOpenPrint", program, sizeof(program));
+    snprintf(cmd, sizeof(cmd), "\"%s\" \"T:GFOpenPrint-TestPage.pdf\" \"%s\"", program, p->uri);
     show_status(run_async(cmd) ? "The Print window shows the test page: check it, then click Print"
-                               : "Couldn't open OpenPrint for the test page");
+                               : "Couldn't open GFOpenPrint for the test page");
 }
 
 /* ---- the queue ---------------------------------------------------------- */
@@ -567,7 +567,7 @@ static int job_path(const char *doc, char *path, size_t cap)
     return 1;
 }
 
-/* Kinds of document the queue keeps: OpenPrint's PDFs, and what programs sent raw (oapspooler.c). PDFs and
+/* Kinds of document the queue keeps: GFOpenPrint's PDFs, and what programs sent raw (oapspooler.c). PDFs and
  * PostScript are printed; PCL and other printer data are kept only. */
 static int queued_kind(const char *file, int *raw)
 {
@@ -676,12 +676,12 @@ static void print_job(void)
     if (!r)
         return;
     if (r->raw) {
-        show_status("PCL and other printer data stay in the queue: OpenPrint sends PDF and PostScript");
+        show_status("PCL and other printer data stay in the queue: GFOpenPrint sends PDF and PostScript");
         return;
     }
-    oap_program_path("OpenPrint", program, sizeof(program));
+    oap_program_path("GFOpenPrint", program, sizeof(program));
     snprintf(cmd, sizeof(cmd), "\"%s\" \"%s\"", program, r->pdf);
-    show_status(run_async(cmd) ? "The Print window is open for that document" : "Couldn't open OpenPrint");
+    show_status(run_async(cmd) ? "The Print window is open for that document" : "Couldn't open GFOpenPrint");
 }
 
 /* Removing keeps the files: they move to the queue's Removed drawer. */
@@ -1011,7 +1011,7 @@ static int printers_main(int argc, char **argv)
     P.menu = CreateMenus(menus, TAG_DONE);
     if (P.menu)
         LayoutMenus(P.menu, P.g.vi, GTMN_NewLookMenus, TRUE, TAG_DONE);
-    /* The first size (the Team's rule for every Open app): 800 x 600, never larger than the screen below its
+    /* The first size (the Team's rule for every GFOpen app): 800 x 600, never larger than the screen below its
      * title bar, and never smaller than what the window needs */
     {
         int sw = P.g.screen->Width, sh = P.g.screen->Height - (P.g.screen->BarHeight + 1);
@@ -1021,7 +1021,7 @@ static int printers_main(int argc, char **argv)
         if (start_h < P.nat_h) start_h = P.nat_h;
     }
     P.win = OpenWindowTags(NULL,
-        WA_Title, (ULONG)"OpenPrint: Printers and Queue", WA_PubScreen, (ULONG)P.g.screen,
+        WA_Title, (ULONG)"GFOpenPrint: Printers and Queue", WA_PubScreen, (ULONG)P.g.screen,
         WA_InnerWidth, start_w, WA_InnerHeight, start_h,
         WA_Left, (P.g.screen->Width - start_w - 24) / 2,
         WA_Top, P.g.screen->BarHeight + 1 + (P.g.screen->Height - P.g.screen->BarHeight - 1 - start_h - 32) / 2,

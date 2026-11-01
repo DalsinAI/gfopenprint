@@ -26,7 +26,7 @@ static int progress(OAPSendProgress fn, void *ctx, const char *stage,
 static void untrusted(const OAPTlsInfo *tls, char *status, size_t cap)
 {
     if (tls->verdict == OAP_CERT_NOTLS)
-        snprintf(status, cap, "%s", "This printer uses IPPS (encrypted IPP), which needs opentls.library. "
+        snprintf(status, cap, "%s", "This printer uses IPPS (encrypted IPP), which needs gfopentls.library. "
                  "Install it, or use the printer's ipp:// address.");
     else if (tls->verdict == OAP_CERT_ASK)
         snprintf(status, cap, "This printer's certificate isn't trusted yet: in Printers and Queue, select it and "
@@ -70,7 +70,7 @@ static int submit(const char *pdf, const char *want, const OAPJobOptions *o,
     format = oap_document_format(s->chunk, n);
     if (!format || (want && strcmp(format, want)) || fseek(f, 0, SEEK_SET)) {
         snprintf(status, cap, "%s", want ? "Source is not a PDF document"
-                 : "Not sent: OpenPrint sends PDF and PostScript to printers, and this is neither");
+                 : "Not sent: GFOpenPrint sends PDF and PostScript to printers, and this is neither");
         goto done;
     }
     ps = !strcmp(format, OAP_FORMAT_PS);
@@ -165,7 +165,7 @@ static int submit(const char *pdf, const char *want, const OAPJobOptions *o,
         }
         if (s->http.status == 401) {
             snprintf(status, cap, "Not printed: the printer refused the user name and password in "
-                     "ENVARC:OpenPrint/Logins");
+                     "ENVARC:GFOpenPrint/Logins");
             attempted = 0;
             goto done;
         }

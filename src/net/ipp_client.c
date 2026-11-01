@@ -15,7 +15,7 @@ int oap_http_post(OAPConn *c, const OAPUri *uri, unsigned long length, const cha
         return 0;                              /* never a password in the clear or to an unknown printer */
     n = snprintf(header, sizeof(header),
                  "POST %s HTTP/1.1\r\nHost: %s:%u\r\nContent-Type: application/ipp\r\n"
-                 "Content-Length: %lu\r\n%sConnection: close\r\nUser-Agent: OpenPrint/0.4\r\n\r\n",
+                 "Content-Length: %lu\r\n%sConnection: close\r\nUser-Agent: GFOpenPrint/0.4\r\n\r\n",
                  uri->path, uri->host, (unsigned)uri->port, length, authorization ? authorization : "");
     return n > 0 && n < (int)sizeof(header) && oap_conn_write(c, header, (size_t)n, 5);
 }
@@ -83,7 +83,7 @@ int oap_ipp_login(OAPConn *c, const OAPUri *uri, const OAPHttpReply *reply, unsi
     char key[300], user[128], password[128];
     int ok;
     if (!uri->secure) {
-        snprintf(note, note_cap, "The printer asks for a password: OpenPrint sends passwords only over ipps://. "
+        snprintf(note, note_cap, "The printer asks for a password: GFOpenPrint sends passwords only over ipps://. "
                  "Use the printer's ipps:// address.");
         return 0;
     }
@@ -94,13 +94,13 @@ int oap_ipp_login(OAPConn *c, const OAPUri *uri, const OAPHttpReply *reply, unsi
     oap_trust_key(uri->host, uri->port, key, sizeof(key));
     if (!oap_login_lookup(key, user, sizeof(user), password, sizeof(password))) {
         snprintf(note, note_cap, "The printer asks for a user name and password: add them for %.120s "
-                 "to ENVARC:OpenPrint/Logins", key);
+                 "to ENVARC:GFOpenPrint/Logins", key);
         return 0;
     }
     ok = oap_http_authorization(reply->challenge, user, password, "POST", uri->path, counter, authorization, cap);
     memset(password, 0, sizeof(password));
     if (!ok)
-        snprintf(note, note_cap, "The printer asks for a kind of login OpenPrint can't give (%.60s)", reply->challenge);
+        snprintf(note, note_cap, "The printer asks for a kind of login GFOpenPrint can't give (%.60s)", reply->challenge);
     return ok;
 }
 
@@ -169,7 +169,7 @@ int oap_query_pdf(const char *uri_text, OAPCaps *caps, OAPTlsInfo *tls, char *no
     caps->accepting = -1;
     note[0] = 0;
     if (!oap_parse_ipp_uri(uri_text, &uri)) {
-        snprintf(note, note_cap, "Not a printer address OpenPrint can use (ipp:// or ipps://host:port/path)");
+        snprintf(note, note_cap, "Not a printer address GFOpenPrint can use (ipp:// or ipps://host:port/path)");
         return 0;
     }
     ok = query_once(&uri, uri_text, caps, tls, 1, &reply, note, note_cap);

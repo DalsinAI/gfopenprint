@@ -1,5 +1,5 @@
 /* Copyright (c) 2026 AmigaChrome Team. SPDX-License-Identifier: MIT */
-/* OpenPrint's Print requester, in GadTools (We, 4 October 2026: OS
+/* GFOpenPrint's Print requester, in GadTools (We, 4 October 2026: OS
  * 3.x applications use GadTools or MUI, not ReAction). It keeps the
  * contract of src/amiga/ui.c, oap_run_print_dialog(), and the 3 October
  * review's design:
@@ -13,7 +13,7 @@
  *   - the window follows the screen's font (Topaz 8 if it would not fit),
  *     opens centred, every control has a key, and the last settings are
  *     remembered;
- *   - the paper starts on the document's own (its .job), else on OpenPrefs'
+ *   - the paper starts on the document's own (its .job), else on GFOpenPrefs'
  *     Printing page's (printer.prefs), unless one was chosen here since that
  *     page's paper last changed (25 October 2026; include/oap_paper.h);
  *   - PostScript a program wrote itself (a queued .ps) is sent as it is: the
@@ -55,8 +55,8 @@ struct IntuitionBase *IntuitionBase;
 struct GfxBase *GfxBase;
 struct Library *GadToolsBase, *AslBase;
 
-#define SETTINGS_VAR "OpenPrint/PrintSettings"
-/* OpenPrefs' Printing page writes the paper here (ENV:, and ENVARC: on Save); it reads ENV:'s, else ENVARC:'s */
+#define SETTINGS_VAR "GFOpenPrint/PrintSettings"
+/* GFOpenPrefs' Printing page writes the paper here (ENV:, and ENVARC: on Save); it reads ENV:'s, else ENVARC:'s */
 #define PAGE_PREFS "ENV:Sys/printer.prefs"
 #define PAGE_PREFS_ARC "ENVARC:Sys/printer.prefs"
 
@@ -155,7 +155,7 @@ static const char *job_title(const char *pdf)
     return base_name(pdf);
 }
 
-/* A page OpenView laid out says its paper and orientation in its .job
+/* A page GFOpenView laid out says its paper and orientation in its .job
  * (paper=0 A4 / 1 Letter, and 2 Legal, 3 A3, 4 A5; landscape=0/1): the Print
  * requester starts there. The .job's paper, or -1 when it says none. */
 static int job_page_setup(const char *pdf, OAPJobOptions *o)
@@ -180,7 +180,7 @@ static int job_page_setup(const char *pdf, OAPJobOptions *o)
     return paper;
 }
 
-/* OpenPrefs' Printing page's paper: pt_PaperSize in ENV:Sys/printer.prefs,
+/* GFOpenPrefs' Printing page's paper: pt_PaperSize in ENV:Sys/printer.prefs,
  * else ENVARC:'s (as the page reads them), or OAP_PAGE_NONE. */
 static int page_paper(void)
 {
@@ -617,7 +617,7 @@ static void save_pdf(void)
 {
     struct FileRequester *fr;
     char path[512], text[sizeof(path) + 80], last[512];
-    lastdir_get("OpenPrint-PDF", last, sizeof last);
+    lastdir_get("GFOpenPrint-PDF", last, sizeof last);
     fr = (struct FileRequester *)AllocAslRequestTags(ASL_FileRequest, ASLFR_TitleText, (ULONG)"Save as PDF",
                                                        ASLFR_InitialDrawer, (ULONG)last,
                                                        ASLFR_DoSaveMode, TRUE, ASLFR_InitialFile, (ULONG)base_name(R.pdf),
@@ -628,7 +628,7 @@ static void save_pdf(void)
     }
     if (AslRequestTags(fr, ASLFR_Window, (ULONG)R.win, ASLFR_SleepWindow, TRUE, TAG_END)) {
         copy(path, sizeof(path), (const char *)fr->fr_Drawer);
-        lastdir_put("OpenPrint-PDF", (const char *)fr->fr_Drawer);
+        lastdir_put("GFOpenPrint-PDF", (const char *)fr->fr_Drawer);
         AddPart((STRPTR)path, fr->fr_File, sizeof(path));
         if (copy_file(R.pdf, path)) {
             snprintf(text, sizeof(text), "Saved %s", path);
@@ -689,7 +689,7 @@ static void find_printers(void)
             Close(in);
         if (out)
             Close(out);
-        show_status("Couldn't open Printers: install OAPPrinters beside OpenPrint or in C:");
+        show_status("Couldn't open Printers: install OAPPrinters beside GFOpenPrint or in C:");
         return;
     }
     show_status("Choose a printer in the Printers window and click Use for printing");
@@ -843,7 +843,7 @@ int oap_run_print_dialog(const char *pdf, OAPJobOptions *o)
     /* start on the printer the job asked for, else the default */
     copy(start, sizeof(start), o->printer_uri);
     if (!start[0] || strstr(start, "printer.local"))
-        if (GetVar((STRPTR)"OpenPrint/PrinterURI", (STRPTR)start, sizeof(start), GVF_GLOBAL_ONLY) <= 0)
+        if (GetVar((STRPTR)"GFOpenPrint/PrinterURI", (STRPTR)start, sizeof(start), GVF_GLOBAL_ONLY) <= 0)
             GetVar((STRPTR)"OpenAmigaPrint/PrinterURI", (STRPTR)start, sizeof(start), GVF_GLOBAL_ONLY);   /* saved before the rename */
     fill_printers(start);
     layout();
