@@ -2,7 +2,7 @@
 
 GFOpenPrint is a standalone, freely distributable modern printing stack for classic Amiga systems.
 
-GFOpenPrint and its viewer GFOpenView were called OpenAmigaPrint and OpenAmigaView until 4 October 2026: products drop "Amiga", the repository (`DalsinAI/openamigaprint`) keeps it. The Installer moves the old programs to `SYS:Storage/GFOpenPrint-Superseded`, and settings saved under the old name are still read. `openprint.readme` is the Aminet readme.
+GFOpenPrint and its viewer GFOpenView were called OpenAmigaPrint and OpenAmigaView until 4 October 2026. The repository was `DalsinAI/openamigaprint` until the AmiCradle rename of 1–2 November 2026, and is now `DalsinAI/gfopenprint`. The Installer moves the old programs to `SYS:Storage/GFOpenPrint-Superseded`, and settings saved under the old name are still read. `openprint.readme` is the Aminet readme.
 
 Its design goal is deliberately conventional on the Amiga side:
 
