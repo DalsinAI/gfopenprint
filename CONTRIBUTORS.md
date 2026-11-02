@@ -20,8 +20,8 @@ GFOpenPrint was under the BSD 2-Clause licence until 4 October 2026.
 
 ## From our other repositories
 
-- `integration/cradle/acnet-mdns.patch` is a patch to AmiCradle's `host/native/hostsocket.py` (DalsinAI/amigachrome).
-- The OS 3.2-style icons are written by ACBuild's `amiga-icon.js` from DalsinAI/amigachrome, at package time.
+- `integration/cradle/acnet-mdns.patch` is a patch to AmiCradle's `host/native/hostsocket.py` (DalsinAI/amicradle).
+- The OS 3.2-style icons are written by ACBuild's `amiga-icon.js` from DalsinAI/amicradle, at package time.
 
 ## Added at package time, not committed
 

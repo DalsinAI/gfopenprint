@@ -1,11 +1,11 @@
 /* Copyright (c) 2026 AmiCradle Team. SPDX-License-Identifier: MIT */
 /* GFOpenPrefs' Printing page's own code against the Print window's (src/core/paper.c), on the host:
- *   - for every paper the page lists, its pr_put (openamigaprefs Printing/src/pr_prefs.c) writes printer.prefs as
+ *   - for every paper the page lists, its pr_put (gfopenprefs Printing/src/pr_prefs.c) writes printer.prefs as
  *     Use or Save does, from GFOpenPrinter's file and from printer.device's no-file state, and paper.c reads it back:
  *     the Print window starts on that paper (A4 for a size GFOpenPrint's driver prints on A4);
  *   - mutated files: paper.c takes a file exactly when the page's reader (Look/src/pf_iff.c pf_parse) does, and
  *     reads the paper the page shows (pr_get).
- * Built and run by tests/test_paper_page.sh from an openamigaprefs checkout. Files only; nothing is printed. */
+ * Built and run by tests/test_paper_page.sh from a gfopenprefs checkout. Files only; nothing is printed. */
 #include "pf_iff.h"
 #include "pr_prefs.h"
 #include "oap_paper.h"

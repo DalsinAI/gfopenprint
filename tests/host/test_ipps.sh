@@ -8,7 +8,7 @@
 #   - tests/host/auth_printer.py, which asks for a login (Digest over
 #     IPPS; Basic over plain IPP, where GFOpenPrint must refuse to answer).
 # The TLS backend is GFOpenTLS: its own code built for the host when OPENTLS
-# names an openamigatls checkout with build-host/ built, else its calls on
+# names a gfopentls checkout with build-host/ built, else its calls on
 # OpenSSL (tests/host/opentls_host.c). (Until 19 October 2026 every check
 # also ran with OpenSSL standing in for AmiSSL.)
 # Needs ippeveprinter (cups-ipp-utils), openssl, python3 and the OpenSSL
@@ -55,7 +55,7 @@ python3 -I "$ROOT/tests/host/auth_printer.py" $P_PLAIN - - "$LAB/plain.log" --pl
 PIDS="$PIDS $!"
 
 # The GFOpenTLS backend links the real GFOpenTLS (on BearSSL) when OPENTLS names
-# an openamigatls checkout whose host libraries are built (cmake -S . -B
+# a gfopentls checkout whose host libraries are built (cmake -S . -B
 # build-host); otherwise tests/host/opentls_host.c, its calls on OpenSSL.
 if [ -n "${OPENTLS:-}" ] && [ -f "$OPENTLS/build-host/libopentls.a" ]; then
     OT_INC="-I$OPENTLS/host/include -I$OPENTLS/include"

@@ -57,8 +57,8 @@ build/test_paper: tests/test_paper.c src/core/paper.c src/core/ipp.c src/core/jo
 test-paper: build/test_paper
 	./build/test_paper
 
-# The Printing page's own writer (openamigaprefs Printing/src/pr_prefs.c) against paper.c's reader; skips with no
-# openamigaprefs checkout beside this one (OPENAMIGAPREFS=dir).
+# The Printing page's own writer (gfopenprefs Printing/src/pr_prefs.c) against paper.c's reader; skips with no
+# gfopenprefs checkout beside this one (OPENAMIGAPREFS=dir).
 test-paper-page:
 	sh tests/test_paper_page.sh
 

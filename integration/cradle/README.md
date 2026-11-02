@@ -5,7 +5,7 @@ That included the one-shot DNS-SD printer query to UDP 224.0.0.251:5353. The
 unpatched worker ignored `sendto()` failures and reported zero endpoints.
 
 `acnet-mdns.patch` is the narrowly scoped installed-runtime patch. Its canonical
-source equivalent is in DalsinAI/amigachrome branch `fix/acnet-mdns-discovery`,
+source equivalent is in DalsinAI/amicradle branch `fix/acnet-mdns-discovery`,
 commit e9e046f, at machines/motherboards/a1200-x86/native/hostsocket.py.
 The installed copy is host/native/hostsocket.py. Restart an affected instance's
 runtime after applying; restarting only the printer browser will not reload Python.
