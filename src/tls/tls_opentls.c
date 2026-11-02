@@ -1,6 +1,6 @@
 /* Copyright (c) 2026 AmiCradle Team. SPDX-License-Identifier: MIT */
 /* The GFOpenTLS backend of the TLS abstraction (tls_backend.h):
- * gfopentls.library, API version 1 (DalsinAI/openamigatls,
+ * gfopentls.library, API version 1 (DalsinAI/gfopentls,
  * docs/AutoDocs-OpenTLS.md; the headers are in third_party/opentls).
  *
  * Bytes move through an I/O hook (OT_SetIOHook) over the same socket, so

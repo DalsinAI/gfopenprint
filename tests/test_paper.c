@@ -13,8 +13,8 @@
 static int fails, checks;
 #define CHECK(c, ...) do { checks++; if (!(c)) { printf("FAIL %s:%d: ", __FILE__, __LINE__); printf(__VA_ARGS__); putchar('\n'); fails++; } } while (0)
 
-/* The printer.prefs openamigaup's GFOpenPrinter part writes where there is none (tools/build_pack.py printer_prefs;
- * the same bytes as openamigaprefs Printing/tests/openprinter-printer.prefs): PRHD, PTXT (GFOpenPrint, A4), PUNT
+/* The printer.prefs gfopenup's GFOpenPrinter part writes where there is none (tools/build_pack.py printer_prefs;
+ * the same bytes as gfopenprefs Printing/tests/openprinter-printer.prefs): PRHD, PTXT (GFOpenPrint, A4), PUNT
  * (oapspool), PDEV. GFOpenPrefs' Printing page changes pt_PaperSize in place: PTXT's data is at 34, the size at 84. */
 static const unsigned char openprinter[222] = {
     0x46,0x4f,0x52,0x4d,0x00,0x00,0x00,0xd6,0x50,0x52,0x45,0x46,0x50,0x52,0x48,0x44,0x00,0x00,0x00,0x06,

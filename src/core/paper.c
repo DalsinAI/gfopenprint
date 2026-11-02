@@ -63,7 +63,7 @@ static int good_id(unsigned long id)
     return 1;
 }
 
-/* The same file GFOpenPrefs' Printing page takes (openamigaprefs Look/src/pf_iff.c pf_parse): one FORM PREF, chunks
+/* The same file GFOpenPrefs' Printing page takes (gfopenprefs Look/src/pf_iff.c pf_parse): one FORM PREF, chunks
  * inside it and nothing nested; and the same paper (Printing/src/pr_prefs.c pr_get): a short PTXT reads as
  * zeros past its end, and with no PTXT the page shows printer.device's no-file state, whose size is zero. */
 int oap_printer_prefs_paper(const unsigned char *b, size_t len)

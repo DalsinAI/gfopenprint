@@ -132,7 +132,7 @@ Port 631 is the default for both. Networking is exclusively through the public `
 
 ## IPPS (IPP over TLS)
 
-IPPS sits behind a TLS abstraction (`include/oap_tls.h`), and plain `ipp://` needs no TLS library at all. The programs that talk to printers (`C:OAPDiscover` and `C:OAVWorker`) open **gfopentls.library** (GFOpenTLS, on BearSSL; MIT licensed and free; API version 1), from DalsinAI/openamigatls. Its headers are in `third_party/opentls`; the library is opened at run time. No AmiSSL SDK is needed or used: AmiSSL 5 was a second backend until 19 October 2026, when the Team's programs moved to GFOpenTLS only.
+IPPS sits behind a TLS abstraction (`include/oap_tls.h`), and plain `ipp://` needs no TLS library at all. The programs that talk to printers (`C:OAPDiscover` and `C:OAVWorker`) open **gfopentls.library** (GFOpenTLS, on BearSSL; MIT licensed and free; API version 1), from DalsinAI/gfopentls. Its headers are in `third_party/opentls`; the library is opened at run time. No AmiSSL SDK is needed or used: AmiSSL 5 was a second backend until 19 October 2026, when the Team's programs moved to GFOpenTLS only.
 
 Without it, an `ipps://` printer says so in words ("This printer uses IPPS (encrypted IPP), which needs gfopentls.library..."), and nothing is sent. `ENV:GFOpenPrint/TLS` set to `none` acts as if it weren't there, for testing.
 
@@ -149,7 +149,7 @@ A certificate for another name, out of date (check the Amiga's clock), or unread
 
 **Logins.** A printer that answers 401 gets HTTP Basic or Digest (MD5), only over `ipps://` with an accepted certificate; over plain `ipp://` GFOpenPrint refuses to send a password and says to use the printer's `ipps://` address. The logins are in `ENVARC:GFOpenPrint/Logins`, one line per printer: `host:port`, a tab, the user name, a tab, the password (kept as plain text, as Amiga programs do; use a login for printing only). A 401 means the printer did not take the job, so the job is sent once more with the login; any other lost answer stays "uncertain" and is never resent by itself.
 
-**Testing.** `make test-ipps` (`tests/host/test_ipps.sh`) runs GFOpenPrint's own connection, TLS, IPP and Print-Job code on x86 or ARM64 cores against printers on 127.0.0.1 only: CUPS's `ippeveprinter` with its own certificate, a second one with a certificate from a test authority, and a small printer that asks for a login (`tests/host/auth_printer.py`). It runs the GFOpenTLS backend, either GFOpenTLS's own code built for the host (`OPENTLS=` an openamigatls checkout with `build-host/` built) or its calls on OpenSSL (`tests/host/opentls_host.c`). `C:OAPIPPSTest` (`query`, `print`, `trust`) is the same tool for the Amiga.
+**Testing.** `make test-ipps` (`tests/host/test_ipps.sh`) runs GFOpenPrint's own connection, TLS, IPP and Print-Job code on x86 or ARM64 cores against printers on 127.0.0.1 only: CUPS's `ippeveprinter` with its own certificate, a second one with a certificate from a test authority, and a small printer that asks for a login (`tests/host/auth_printer.py`). It runs the GFOpenTLS backend, either GFOpenTLS's own code built for the host (`OPENTLS=` a gfopentls checkout with `build-host/` built) or its calls on OpenSSL (`tests/host/opentls_host.c`). `C:OAPIPPSTest` (`query`, `print`, `trust`) is the same tool for the Amiga.
 
 ## Licence
 

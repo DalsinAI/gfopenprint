@@ -1,6 +1,6 @@
 /* Copyright (c) 2026 AmiCradle Team. SPDX-License-Identifier: MIT */
 /* Host tests only: the gfopentls.library calls GFOpenPrint's GFOpenTLS backend
- * uses (API version 1, docs/AutoDocs-OpenTLS.md in DalsinAI/openamigatls),
+ * uses (API version 1, docs/AutoDocs-OpenTLS.md in DalsinAI/gfopentls),
  * made on OpenSSL, so src/tls/tls_opentls.c runs on x86 or ARM64 cores
  * against a printer emulator while the library itself is being built.
  * It follows the contract as written: an I/O hook moves the bytes, the
