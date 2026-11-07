@@ -66,3 +66,6 @@ file "$OUT/OAPIPPSTest"
 python3 "$ROOT/tools/make_oap_icon.py" "$OUT/GFOpenPrint.info"
 file "$OUT/GFOpenPrint.info"
 wc -c "$OUT/GFOpenPrint.info"
+
+# GFOpenView (the viewer, with the ARexx port GFOPENVIEW.1) and its Rexx/ example, into the same OUT
+AMIGA_CC=$CC OAP_OUT=$OUT sh "$ROOT/build-viewer.sh"
