@@ -20,6 +20,9 @@ p=Path(sys.argv[1]); data=bytearray(p.read_bytes());struct.pack_into('>I',data,7
 PYICON
 file "$OUT/GFOpenView" "$OUT/OAVWorker" "$OUT/GFOpenView.info"
 sha256sum "$OUT/GFOpenView" "$OUT/OAVWorker" > "$OUT/VIEWER_SHA256SUMS.txt"
+# the ARexx example (README: ARexx)
+mkdir -p "$OUT/Rexx"
+cp "$ROOT"/Rexx/*.rexx "$OUT/Rexx/"
 
 # No-network guest request/worker regression helper.
 "$CC" $FLAGS -I"$ROOT/include" -o "$OUT/OAVRequestSmoke" \

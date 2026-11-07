@@ -95,7 +95,9 @@ enum {
     /* MultiView's ARexx commands */
     RX_RELOAD, RX_SAVEAS, RX_ABOUT, RX_COPY, RX_PASTE, RX_CLEARSEL, RX_GETTRIG, RX_DOTRIG, RX_SCREEN, RX_PUBSCREEN,
     RX_GETDIR, RX_GETFILE, RX_GETOBJ, RX_MINSIZE, RX_NORMSIZE, RX_MAXSIZE, RX_WTOFRONT, RX_WTOBACK, RX_STOFRONT,
-    RX_STOBACK, RX_ACTIVATE, RX_BEEP
+    RX_STOBACK, RX_ACTIVATE, RX_BEEP,
+    /* with VERSION, HELP and QUIT, the commands every Open app's port has */
+    RX_APPFRONT, RX_FAULT
 };
 
 /* MultiView's command line (or the project icon's tool types), as read. Numbers are -1 when not given. */
@@ -1097,7 +1099,8 @@ static const struct { const char *name; int id; int args; } rexx_commands[] = {
     { "GETCURRENTDIR", RX_GETDIR, 0 }, { "GETFILEINFO", RX_GETFILE, 0 }, { "GETOBJECTINFO", RX_GETOBJ, 3 },
     { "MINIMUMSIZE", RX_MINSIZE, 0 }, { "NORMALSIZE", RX_NORMSIZE, 0 }, { "MAXIMUMSIZE", RX_MAXSIZE, 0 },
     { "WINDOWTOFRONT", RX_WTOFRONT, 0 }, { "WINDOWTOBACK", RX_WTOBACK, 0 }, { "SCREENTOFRONT", RX_STOFRONT, 0 },
-    { "SCREENTOBACK", RX_STOBACK, 0 }, { "ACTIVATEWINDOW", RX_ACTIVATE, 0 }, { "BEEPSCREEN", RX_BEEP, 0 }
+    { "SCREENTOBACK", RX_STOBACK, 0 }, { "ACTIVATEWINDOW", RX_ACTIVATE, 0 }, { "BEEPSCREEN", RX_BEEP, 0 },
+    { "ACTIVATE", RX_APPFRONT, 0 }, { "FAULT", RX_FAULT, 1 }
 };
 
 static struct RexxMsg *cur_rm;                 /* the message being answered: stems are set in its caller */
@@ -1326,6 +1329,7 @@ static int rexx_command(const char *line, const char **result)
     case RX_HELP:
         copystr(A.resultbuf, sizeof(A.resultbuf), "OPEN [NAME] FILE | SET KEY VALUE | PRINT | SAVEPDF FILE | PLAY | PAUSE | STOP | NEXT | PREVIOUS | "
                 "FIT | ACTUAL | PAGE | PAPER | ORIENTATION | SCALE | FIND TEXT | FINDNEXT | JOB | CANCEL | JOBS | REFRESH | QUIT | "
+                "VERSION | HELP | ACTIVATE | FAULT CODE | "
                 "and MultiView's: RELOAD ABOUT GETFILEINFO GETCURRENTDIR GETOBJECTINFO GETTRIGGERINFO DOTRIGGERMETHOD "
                 "MINIMUMSIZE NORMALSIZE MAXIMUMSIZE WINDOWTOFRONT WINDOWTOBACK SCREENTOFRONT SCREENTOBACK ACTIVATEWINDOW BEEPSCREEN "
                 "SCREEN PUBSCREEN CLEARSELECTED (COPY PASTE SAVEAS answer 5: not here)");
@@ -1414,6 +1418,13 @@ static int rexx_command(const char *line, const char **result)
     case RX_STOBACK: if (A.g.screen) ScreenToBack(A.g.screen); break;
     case RX_ACTIVATE: if (A.win) ActivateWindow(A.win); break;
     case RX_BEEP: DisplayBeep(A.g.screen); break;
+    case RX_APPFRONT:
+        if (A.g.screen) ScreenToFront(A.g.screen);
+        if (A.win) { WindowToFront(A.win); ActivateWindow(A.win); }
+        break;
+    case RX_FAULT:
+        Fault(strtol(arg1, NULL, 10), NULL, (STRPTR)A.resultbuf, (LONG)sizeof(A.resultbuf));
+        break;
     default:
         ok = action(rexx_commands[i].id, arg1);
         copystr(A.resultbuf, sizeof(A.resultbuf),
