@@ -21,6 +21,18 @@ int main(void)
  f=fopen("build/viewer-core-test.pdf","wb");assert(f);assert(oav_pdf_rgb(f,96,64,&s,rows,NULL,err,sizeof(err)));assert(!fclose(f));
  f=tmpfile();assert(f);assert(!oav_pdf_rgb(f,96,64,&s,cancelled,NULL,err,sizeof(err)));fclose(f);
  {
+  /* a picture is never sent with more pixels than the paper takes at OAV_PRINT_DPI, nor fewer than it has
+   * when it is small, and goes in Flate-compressed */
+  static char pdf[1<<20];size_t n;long size;
+  f=fopen("build/viewer-core-test.pdf","rb");assert(f);n=fread(pdf,1,sizeof(pdf)-1,f);fclose(f);pdf[n]=0;
+  assert(strstr(pdf,"/Width 96 /Height 64 ")&&strstr(pdf,"/FlateDecode"));
+  f=fopen("build/viewer-core-big.pdf","wb");assert(f);assert(oav_pdf_rgb(f,3840,2228,&s,rows,NULL,err,sizeof(err)));
+  size=ftell(f);assert(!fclose(f));
+  f=fopen("build/viewer-core-big.pdf","rb");assert(f);n=fread(pdf,1,sizeof(pdf)-1,f);fclose(f);pdf[n]=0;
+  assert(strstr(pdf,"/Width 2180 /Height 1265 "));          /* A4 less 1/2" margins at 300 dpi */
+  assert(size>0&&size<3840L*2228L*3L/20L);
+ }
+ {
   static const char txt[]="One line\nTwo LINES here\nthree\nM\xc4" "dchen line\n";
   static const char guide[]="@database x.guide\n@node Main \"Contents\"\n@title Hello\nFirst main line\n@{\"Next\" link More}\n@endnode\n"
    "@node More\nalpha\n@remark line not shown\nbeta line\n@endnode\n";
