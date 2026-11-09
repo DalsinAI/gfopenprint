@@ -5,6 +5,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
+
+/* An upload that moves less than OAP_UPLOAD_STEP bytes in OAP_UPLOAD_STALL seconds has stalled. */
+#define OAP_UPLOAD_STEP 65536UL
+#define OAP_UPLOAD_STALL 30
 
 typedef struct SendWorkspace {
     OAPUri uri;
@@ -48,7 +53,8 @@ static int submit(const char *pdf, const char *want, const OAPJobOptions *o,
     unsigned char *body = NULL;
     size_t plen = 0, bn = 0, n;
     long flen = 0;
-    unsigned long uploaded = 0;
+    unsigned long uploaded = 0, mark;
+    time_t moved;
     OAPConn *conn = NULL;
     int result = OAP_SEND_ERROR, attempted = 0, tries, ps;
     const char *format, *kind;
@@ -144,12 +150,24 @@ static int submit(const char *pdf, const char *want, const OAPJobOptions *o,
             !oap_conn_write(conn, s->prefix, plen, 5)) {
             snprintf(status, cap, "Submission uncertain: IPP request write failed"); goto done;
         }
+        moved = time(NULL);
+        mark = 0;
         while ((n = fread(s->chunk, 1, sizeof(s->chunk), f)) != 0) {
             if (!progress(notify, ctx, "uploading", uploaded, (unsigned long)flen)) goto cancelled;
             if (!oap_conn_write(conn, s->chunk, n, 5)) {
                 snprintf(status, cap, "Submission uncertain: %s upload interrupted; check printer", kind); goto done;
             }
             uploaded += (unsigned long)n;
+            /* a printer that takes a trickle never finishes: a stall ends the job, in words, not a 0% forever */
+            if (uploaded - mark >= OAP_UPLOAD_STEP) {
+                mark = uploaded;
+                moved = time(NULL);
+            } else if (time(NULL) - moved > OAP_UPLOAD_STALL) {
+                snprintf(status, cap, "Submission uncertain: the printer stopped taking the %s (%lu of %lu KiB "
+                         "sent); check the printer before printing again", kind, uploaded / 1024UL,
+                         (unsigned long)flen / 1024UL);
+                goto done;
+            }
         }
         if (ferror(f) || uploaded != (unsigned long)flen) {
             snprintf(status, cap, "Submission uncertain: %s read length changed", kind); goto done;

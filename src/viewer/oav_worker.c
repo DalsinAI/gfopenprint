@@ -59,7 +59,7 @@ static int print_progress(void *opaque,const char *stage,unsigned long sent,unsi
 {
  PrintProgress *p=opaque;char text[240];int changed=strcmp(stage,p->stage)!=0;
  if(is_cancelled(&p->cancel))return 0;
- if(!changed&&sent<p->last_bytes+524288UL&&sent!=total)return 1;
+ if(!changed&&sent<p->last_bytes+65536UL&&sent!=total)return 1;   /* every 64 KiB: a slow printer still shows it moving */
  if(!strcmp(stage,"uploading"))snprintf(text,sizeof(text),"Uploading %lu%% (%lu / %lu KiB)",total?(sent==total?100UL:sent/(total/100UL+1)):0UL,sent/1024UL,total/1024UL);
  else snprintf(text,sizeof(text),"%s",!strcmp(stage,"checking")?"Checking what the printer takes":!strcmp(stage,"connecting")?"Connecting to selected printer":!strcmp(stage,"awaiting-reply")?"Upload complete; waiting for printer job ID":"Preparing the document");
  result(p->request,stage,text);
