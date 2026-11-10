@@ -97,7 +97,7 @@ enum {
     RX_GETDIR, RX_GETFILE, RX_GETOBJ, RX_MINSIZE, RX_NORMSIZE, RX_MAXSIZE, RX_WTOFRONT, RX_WTOBACK, RX_STOFRONT,
     RX_STOBACK, RX_ACTIVATE, RX_BEEP,
     /* with VERSION, HELP and QUIT, the commands every Open app's port has */
-    RX_APPFRONT, RX_FAULT
+    RX_APPFRONT, RX_FAULT, RX_DEACTIVATE, RX_LASTERROR
 };
 
 /* MultiView's command line (or the project icon's tool types), as read. Numbers are -1 when not given. */
@@ -169,6 +169,8 @@ static struct App {
     OAPSelectionListener selection;
     char printer_saved[384];
     char path[OAV_PATH_MAX], lastreq[OAV_PATH_MAX], message[256], resultbuf[2048];
+    char lasterror[256];                    /* ARexx LASTERROR: the last failing command's reason */
+    int from_wb;                            /* started from Workbench */
     int running, refresh, page, zoom, job_active, qcount, have_white, ticks, attached, setup_on;
     /* Find: the file's text, read when first searched */
     char *find_buf, find_what[80], find_node[64], open_node[64];   /* open_node: a guide opens at this node */
@@ -1100,7 +1102,8 @@ static const struct { const char *name; int id; int args; } rexx_commands[] = {
     { "MINIMUMSIZE", RX_MINSIZE, 0 }, { "NORMALSIZE", RX_NORMSIZE, 0 }, { "MAXIMUMSIZE", RX_MAXSIZE, 0 },
     { "WINDOWTOFRONT", RX_WTOFRONT, 0 }, { "WINDOWTOBACK", RX_WTOBACK, 0 }, { "SCREENTOFRONT", RX_STOFRONT, 0 },
     { "SCREENTOBACK", RX_STOBACK, 0 }, { "ACTIVATEWINDOW", RX_ACTIVATE, 0 }, { "BEEPSCREEN", RX_BEEP, 0 },
-    { "ACTIVATE", RX_APPFRONT, 0 }, { "FAULT", RX_FAULT, 1 }
+    { "ACTIVATE", RX_APPFRONT, 0 }, { "FAULT", RX_FAULT, 1 }, { "DEACTIVATE", RX_DEACTIVATE, 0 },
+    { "LASTERROR", RX_LASTERROR, 0 }
 };
 
 static struct RexxMsg *cur_rm;                 /* the message being answered: stems are set in its caller */
@@ -1307,19 +1310,25 @@ static int rexx_command(const char *line, const char **result)
     verb = word(&cursor, 0);
     *result = A.resultbuf;
     A.resultbuf[0] = 0;
-    if (!verb)
+    if (!verb) {
+        copystr(A.resultbuf, sizeof(A.resultbuf), "No command");
         return 10;
+    }
     for (i = 0; i < sizeof(rexx_commands) / sizeof(rexx_commands[0]); i++)
         if (!strcasecmp(verb, rexx_commands[i].name))
             break;
     if (i == sizeof(rexx_commands) / sizeof(rexx_commands[0])) {
         copystr(A.resultbuf, sizeof(A.resultbuf), "Unknown command; HELP lists them");
+        return 20;                              /* as arexx.class, and every Open app's port */
+    }
+    if (rexx_commands[i].args == 1 && !(arg1 = word(&cursor, 1))) {
+        snprintf(A.resultbuf, sizeof(A.resultbuf), "%s needs an argument (HELP lists them)", rexx_commands[i].name);
         return 10;
     }
-    if (rexx_commands[i].args == 1 && !(arg1 = word(&cursor, 1)))
+    if (rexx_commands[i].args == 2 && (!(arg1 = word(&cursor, 0)) || !(arg2 = word(&cursor, 1)))) {
+        snprintf(A.resultbuf, sizeof(A.resultbuf), "%s needs two arguments (HELP lists them)", rexx_commands[i].name);
         return 10;
-    if (rexx_commands[i].args == 2 && (!(arg1 = word(&cursor, 0)) || !(arg2 = word(&cursor, 1))))
-        return 10;
+    }
     if (rexx_commands[i].args == 3)
         arg1 = word(&cursor, 1);
     switch (rexx_commands[i].id) {
@@ -1329,7 +1338,7 @@ static int rexx_command(const char *line, const char **result)
     case RX_HELP:
         copystr(A.resultbuf, sizeof(A.resultbuf), "OPEN [NAME] FILE | SET KEY VALUE | PRINT | SAVEPDF FILE | PLAY | PAUSE | STOP | NEXT | PREVIOUS | "
                 "FIT | ACTUAL | PAGE | PAPER | ORIENTATION | SCALE | FIND TEXT | FINDNEXT | JOB | CANCEL | JOBS | REFRESH | QUIT | "
-                "VERSION | HELP | ACTIVATE | FAULT CODE | "
+                "VERSION | HELP | ACTIVATE | DEACTIVATE | FAULT CODE | LASTERROR | "
                 "and MultiView's: RELOAD ABOUT GETFILEINFO GETCURRENTDIR GETOBJECTINFO GETTRIGGERINFO DOTRIGGERMETHOD "
                 "MINIMUMSIZE NORMALSIZE MAXIMUMSIZE WINDOWTOFRONT WINDOWTOBACK SCREENTOFRONT SCREENTOBACK ACTIVATEWINDOW BEEPSCREEN "
                 "SCREEN PUBSCREEN CLEARSELECTED (COPY PASTE SAVEAS answer 5: not here)");
@@ -1365,6 +1374,10 @@ static int rexx_command(const char *line, const char **result)
             copystr(A.resultbuf, sizeof(A.resultbuf), "GFOpenView does not show the Clipboard");
             return 5;
         }
+        if (!name || !*name) {                  /* the window's Open asks; a script's never does */
+            copystr(A.resultbuf, sizeof(A.resultbuf), "OPEN needs a file");
+            return 10;
+        }
         ok = action(B_OPEN, name);
         copystr(A.resultbuf, sizeof(A.resultbuf), A.message);
         break;
@@ -1390,8 +1403,10 @@ static int rexx_command(const char *line, const char **result)
     case RX_GETTRIG: return rexx_triggerinfo(arg1);
     case RX_DOTRIG: {
         char *num = keyword_value(arg1, "METHOD");
-        if (!num)
+        if (!num) {
+            copystr(A.resultbuf, sizeof(A.resultbuf), "DOTRIGGERMETHOD needs METHOD");
             return 10;
+        }
         ok = do_trigger((ULONG)strtoul(num, NULL, 0) & STMF_METHOD_MASK);
         copystr(A.resultbuf, sizeof(A.resultbuf), A.message);
         break;
@@ -1422,6 +1437,12 @@ static int rexx_command(const char *line, const char **result)
         if (A.g.screen) ScreenToFront(A.g.screen);
         if (A.win) { WindowToFront(A.win); ActivateWindow(A.win); }
         break;
+    case RX_DEACTIVATE:
+        copystr(A.resultbuf, sizeof(A.resultbuf), "DEACTIVATE: GFOpenView has no icon to go to (WINDOWTOBACK moves the window back)");
+        return 5;
+    case RX_LASTERROR:
+        copystr(A.resultbuf, sizeof(A.resultbuf), A.lasterror);
+        break;
     case RX_FAULT:
         Fault(strtol(arg1, NULL, 10), NULL, (STRPTR)A.resultbuf, (LONG)sizeof(A.resultbuf));
         break;
@@ -1443,6 +1464,9 @@ static void rexx_messages(struct MsgPort *port)
         cur_rm = rm;
         rc = rexx_command((const char *)rm->rm_Args[0], &result);
         cur_rm = NULL;
+        if (rc)                                 /* RESULT goes back with RC 0 only: LASTERROR has the text */
+            copystr(A.lasterror, sizeof(A.lasterror),
+                    A.resultbuf[0] ? A.resultbuf : A.message[0] ? A.message : "The command failed");
         rm->rm_Result1 = rc;
         rm->rm_Result2 = 0;
         if (rc == 0 && (rm->rm_Action & RXFF_RESULT) && RexxSysBase && result)
@@ -1858,6 +1882,7 @@ static int viewer_main(int argc, char **argv)
         }
     } else {
         struct WBStartup *w = (struct WBStartup *)argv;
+        A.from_wb = 1;
         if (w->sm_NumArgs > 1 && w->sm_ArgList[1].wa_Lock) {
             BPTR old = CurrentDir(w->sm_ArgList[1].wa_Lock);
             BPTR lock = Lock((STRPTR)w->sm_ArgList[1].wa_Name, ACCESS_READ);
@@ -1934,9 +1959,13 @@ static int viewer_main(int argc, char **argv)
         rexxsig = 1UL << A.rexxport->mp_SigBit;
     if (A.mvport)
         rexxsig |= 1UL << A.mvport->mp_SigBit;
-    /* as MultiView: no file and no WINDOW, or REQUESTER, asks which file; Cancel leaves the window empty */
-    if ((!initial[0] && !A.opt.window && !A.opt.clipboard) || A.opt.requester)
+    /* as MultiView from Workbench: no file and no WINDOW tool type, or REQUESTER, asks which file; Cancel
+     * leaves the window empty. From a Shell (where scripts start it) no file opens the window empty, so the
+     * file requester never holds up the ARexx port (amicradle-teams ARexx-RULE.md 4); REQUESTER asks. */
+    if ((!initial[0] && !A.opt.window && !A.opt.clipboard && A.from_wb) || A.opt.requester)
         action(B_OPEN, NULL);
+    else if (!initial[0] && !A.opt.clipboard)
+        status("Open... or drop a file here");
     while (A.running) {
         sig = Wait(winsig | appsig | rexxsig | oap_selection_mask(&A.selection) | SIGBREAKF_CTRL_C);
         if (sig & appsig) {
