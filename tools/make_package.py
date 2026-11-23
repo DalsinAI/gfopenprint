@@ -354,42 +354,64 @@ def build(version: str, out: Path) -> tuple[Path, list[tuple[str, bytes]]]:
 # ---------------------------------------------------------------- OS 3.2-style icons
 # We, 4 October 2026: "always make OS 3.2.3 style icons". Each classic icon
 # above keeps its type, default tool, tool types, stack and drawer window; its
-# picture becomes an OS 3.5 colour icon with the classic one as fallback,
-# written by ACBuild's amiga-icon.js (node). Drawers use Boxie's OS 3.2 drawer
-# (MIT, Damir Sijakovic; LICENCE.Boxie ships beside the icons).
-ACBUILD_ICON_JS = Path(os.environ.get("ACBUILD_ICON_JS", Path.home() / "AmiCradle/launcher/acbuild-tools/amiga-icon.js"))
-BOXIE = Path(os.environ.get("BOXIE_ICONS", Path.home() / "AmiCradle/resources/icons/collections/boxie"))
+# picture becomes an OS 3.5 colour icon (a GlowIcon) with the classic one as
+# fallback. Pictures are icon_art's; drawers are our own Soft 3D folder (Dale,
+# 23 November 2026: "soft 3d our own look on design"; the Boxie set is retired).
+# All in Python: AmiCradle's GlowIcon writer (scripts/icons/amiga_icon.py, from
+# AMICRADLE) and GFOpenUp's Soft 3D drawing (tools/soft3d_kinds_art.py, from
+# GFOPENUP); both default to the checkouts beside this one.
+AMICRADLE = Path(os.environ.get("AMICRADLE", ROOT.parent / "amicradle"))
+GFOPENUP = Path(os.environ.get("GFOPENUP", ROOT.parent / "gfopenup"))
 ART_FOR = {"Install GFOpenPrint.info": "install", "ReadMe.info": "page", "WBStartup/OAPSpooler.info": "printer",
            "Drawer/GFOpenView.info": "viewer", "Drawer/Printers and Queue.info": "printer",
            "Drawer/Picture.png.info": "picture", "Drawer/TestPage.pdf.info": "pdf"}
 DRAWERS = ["Icons/GFOpenPrint.info"]
+DRAWER_SIZE = 64            # the Soft 3D folder's size in GFOpenUp's own icons (tools/openicons_part.py)
+
+
+def icon_tools():
+    """amiga_icon (the GlowIcon writer) and soft3d_kinds_art (the Soft 3D folder), or a stop saying what's missing."""
+    found = sorted(p for p in [AMICRADLE / "scripts" / "amiga_icon.py", *(AMICRADLE / "scripts").glob("*/amiga_icon.py")] if p.is_file())
+    art = GFOPENUP / "tools" / "soft3d_kinds_art.py"
+    if not found or not art.is_file():
+        raise SystemExit("OS 3.2-style icons need AmiCradle's scripts/icons/amiga_icon.py (AMICRADLE=" + str(AMICRADLE)
+                         + ") and GFOpenUp's tools/soft3d_kinds_art.py (GFOPENUP=" + str(GFOPENUP) + ")")
+    sys.path.insert(0, str(found[0].parent))
+    sys.path.insert(0, str(art.parent))
+    import amiga_icon
+    import soft3d_kinds_art
+    return amiga_icon, soft3d_kinds_art
 
 
 def os32_icons(top: Path, out: Path, files: list[tuple[str, bytes]]) -> list[tuple[str, bytes]]:
-    import json, subprocess, tempfile
-    drawer = BOXIE / "os3" / "containers" / "drawer-blue.info"
-    if not ACBUILD_ICON_JS.is_file() or not drawer.is_file() or not shutil.which("node"):
-        raise SystemExit("OS 3.2-style icons need node, ACBuild's amiga-icon.js (ACBUILD_ICON_JS) and the Boxie set (BOXIE_ICONS)")
+    amiga_icon, soft3d = icon_tools()
     sys.path.insert(0, str(ROOT / "tools"))
     import icon_art
-    with tempfile.TemporaryDirectory() as tmp:
-        jobs = []
-        for rel, art in ART_FOR.items():
-            rgba = Path(tmp) / f"{art}.rgba"
-            if not rgba.exists():
-                rgba.write_bytes(icon_art.draw(art))
-            jobs.append({"info": str(top / rel), "rgba": str(rgba), "w": icon_art.W, "h": icon_art.H})
-        for rel in DRAWERS:
-            jobs.append({"info": str(top / rel), "from": str(drawer)})
-        jobs.append({"info": str(out / "GFOpenPrint.info"), "from": str(drawer)})
-        (Path(tmp) / "jobs.json").write_text(json.dumps(jobs))
-        subprocess.run(["node", str(ROOT / "tools" / "os32_icons.js"), str(ACBUILD_ICON_JS), str(Path(tmp) / "jobs.json")],
-                       check=True, stdout=subprocess.DEVNULL)
-    (top / "Icons" / "LICENCE.Boxie").write_bytes((BOXIE / "LICENCE").read_bytes())
+
+    def frames(rest: bytes, chosen: bytes, w: int, h: int) -> list[tuple[int, int, bytes]]:
+        return [(w, h, amiga_icon.dither_rgb565(w, h, rest)),
+                (w, h, amiga_icon.dither_rgb565(w, h, amiga_icon.glow_selected(w, h, chosen)))]
+
+    def rewrite(info: Path, pics: list[tuple[int, int, bytes]]) -> None:
+        icon = amiga_icon.read_icon(info.read_bytes())
+        meta = {"type": icon["type"], "defaultTool": icon.get("defaultTool"), "toolTypes": icon.get("toolTypes") or [],
+                "toolWindow": icon.get("toolWindow"), "stack": icon.get("stack") or 4096,
+                "x": amiga_icon.NO_POSITION, "y": amiga_icon.NO_POSITION, "drawer": icon.get("drawer")}
+        info.write_bytes(amiga_icon.write_os35(meta, pics))
+
+    drawn = {}
+    for rel, art in ART_FOR.items():
+        if art not in drawn:
+            rgba = icon_art.draw(art)
+            drawn[art] = frames(rgba, rgba, icon_art.W, icon_art.H)
+        rewrite(top / rel, drawn[art])
+    rest, chosen = (soft3d.frames("drawer", DRAWER_SIZE, c).convert("RGBA") for c in (False, True))
+    folder = [(rest.width, rest.height, amiga_icon.dither_rgb565(rest.width, rest.height, rest.tobytes())),
+              (chosen.width, chosen.height, amiga_icon.dither_rgb565(chosen.width, chosen.height, chosen.tobytes()))]
+    for info in [top / rel for rel in DRAWERS] + [out / "GFOpenPrint.info"]:
+        rewrite(info, folder)
     upgraded = set(ART_FOR) | set(DRAWERS)
-    files = [(rel, (top / rel).read_bytes() if rel in upgraded else data) for rel, data in files]
-    files.append(("Icons/LICENCE.Boxie", (top / "Icons" / "LICENCE.Boxie").read_bytes()))
-    return files
+    return [(rel, (top / rel).read_bytes() if rel in upgraded else data) for rel, data in files]
 
 
 def main() -> int:
