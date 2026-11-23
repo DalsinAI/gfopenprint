@@ -21,11 +21,7 @@ GFOpenPrint was under the BSD 2-Clause licence until 4 October 2026.
 ## From our other repositories
 
 - `integration/cradle/acnet-mdns.patch` is a patch to AmiCradle's `host/native/hostsocket.py` (DalsinAI/amicradle).
-- The OS 3.2-style icons are written by ACBuild's `amiga-icon.js` from DalsinAI/amicradle, at package time.
-
-## Added at package time, not committed
-
-- **Boxie icons** (Damir Šijaković, MIT): `tools/make_package.py` takes Boxie's OS 3.2 drawer icon from AmiCradle's copy of the set and ships its `LICENCE` beside the icons as `Icons/LICENCE.Boxie`.
+- The OS 3.2-style icons are written at package time by AmiCradle's `scripts/icons/amiga_icon.py` (DalsinAI/amicradle), with GFOpenUp's Soft 3D folder (`tools/soft3d_kinds_art.py`, DalsinAI/gfopenup) for the drawers.
 
 ## Work we learned from
 
