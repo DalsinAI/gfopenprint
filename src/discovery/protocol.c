@@ -55,7 +55,6 @@ int oap_ipp_parse_caps(const unsigned char *p,size_t n,uint32_t id,OAPCaps *out)
  else if(eq(name,"printer-state-reasons")&&tag==0x44){size_t used=strlen(c.reasons);if(used+2<sizeof(c.reasons)){if(used){c.reasons[used++]=',';c.reasons[used++]=' ';}text(c.reasons+used,sizeof(c.reasons)-used,v,b);}}
  }return 0;}
 /* Verified to take PDF; over ipps:// also with a certificate accepted. */
-int oap_caps_route(const OAPCaps *c){return c->pdf==OAP_PDF_YES?OAP_PDF_YES:c->pwg==OAP_PDF_YES?OAP_PDF_RASTER:c->pdf;}
 /* Takes PDF, or PWG Raster for GFOpenPrint's own PDFs. */
 int oap_pdf_eligible(const OAPDiscovered *p){return p&&p->alive&&p->uri[0]&&OAP_ROUTE_OK(oap_caps_route(&p->caps))&&(!p->secure||p->cert==OAP_CERT_OK||p->cert==OAP_CERT_TRUSTED);}
 /* The instance's own label (the part before ._ipp._tcp or ._ipps._tcp). */

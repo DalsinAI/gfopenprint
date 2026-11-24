@@ -40,7 +40,8 @@ int oap_http_response(const unsigned char *, size_t, int, unsigned char *, size_
 int oap_http_header(const unsigned char *, size_t, const char *, char *, size_t);
 int oap_pdf_eligible(const OAPDiscovered *);
 /* OAP_PDF_YES when it takes PDF, _RASTER when only PWG Raster, else caps->pdf (_NO or _UNKNOWN). */
-int oap_caps_route(const OAPCaps *);
+static inline int oap_caps_route(const OAPCaps *c)
+{ return c->pdf == OAP_PDF_YES ? OAP_PDF_YES : c->pwg == OAP_PDF_YES ? OAP_PDF_RASTER : c->pdf; }
 /* A printer that offers both ipp:// and ipps:// is shown once: by ipps://
  * when this Amiga has TLS (`secure_ok`), else by ipp://. */
 void oap_discovery_prefer(OAPDiscovery *, int secure_ok);
