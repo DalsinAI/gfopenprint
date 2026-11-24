@@ -73,6 +73,11 @@ static void test_page(void)
     if (!pdf) { free(t); return; }
     CHECK(strstr((char *)pdf, "a \\(b\\) c\\\\d)") != NULL);              /* escaped in the PDF */
     CHECK(strstr((char *)pdf, "/BaseFont /Courier") != NULL);
+    /* numbers written without printf's %g (the Amiga's C library has none) */
+    CHECK(strstr((char *)pdf, "BT /F1 24 Tf 40 800 Td (GFOS test page) Tj") != NULL);
+    CHECK(strstr((char *)pdf, "0.1 g 86.8 600 46 30 re f") != NULL);
+    CHECK(strstr((char *)pdf, "\n1 0 0 rg 300 660 60 80 re f") != NULL);
+    CHECK(strstr((char *)pdf, "%g") == NULL && strstr((char *)pdf, "%s") == NULL && strstr((char *)pdf, "%.") == NULL);
     render(pdf, n, 3, &c);
     /* the swatches, 60 x 80 pt from x 40 every 65 pt, y 660-740 */
     for (i = 0; i < OAP_TP_SWATCHES; i++)
