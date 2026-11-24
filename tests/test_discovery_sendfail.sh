@@ -10,6 +10,7 @@ CC=${HOST_CC:-cc}
 "$CC" -shared -fPIC "$ROOT/tests/host/deny_mdns.c" -o "$OUT/deny.so" -ldl
 "$CC" -I"$ROOT/include" -O2 -Wall -Wextra -Werror \
     "$ROOT"/src/discovery/*.c "$ROOT/src/core/ipp.c" "$ROOT/src/core/job.c" "$ROOT"/src/net/*.c "$ROOT/src/tls/tls.c" "$ROOT/src/tls/trust.c" \
+    "$ROOT/src/core/pdf2pwg.c" "$ROOT/src/core/pwg.c" "$ROOT/src/core/pdfr.c" "$ROOT/src/core/inflate.c" "$ROOT/src/core/raster_font_none.c" \
     -o "$OUT/discover"
 rc=0
 LD_PRELOAD="$OUT/deny.so" "$OUT/discover" "$OUT/result.tsv" || rc=$?

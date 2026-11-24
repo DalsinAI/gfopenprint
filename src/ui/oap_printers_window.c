@@ -214,7 +214,7 @@ static void columns(char *out, size_t cap, const int *widths, int n, const char 
 
 static const char *pdf_word(int pdf)
 {
-    return pdf == OAP_PDF_YES ? "Yes" : pdf == OAP_PDF_NO ? "No" : "?";
+    return pdf == OAP_PDF_YES ? "Yes" : pdf == OAP_PDF_RASTER ? "Raster" : pdf == OAP_PDF_NO ? "No" : "?";
 }
 
 static const char *state_word(const OAPPrinter *p)
@@ -224,14 +224,16 @@ static const char *state_word(const OAPPrinter *p)
     if (oap_printer_is_secure(p)) {
         switch (p->cert) {
         case OAP_CERT_NOTLS: return "Needs opentls.lib";
-        case OAP_CERT_ASK: return p->pdf == OAP_PDF_YES ? "Trust it to use it" : "Not verified";
+        case OAP_CERT_ASK: return OAP_ROUTE_OK(p->pdf) ? "Trust it to use it" : "Not verified";
         case OAP_CERT_CHANGED: return "Certificate changed";
-        case OAP_CERT_NAME: case OAP_CERT_DATES: return p->pdf == OAP_PDF_YES ? "Trust it to use it" : "Certificate problem";
+        case OAP_CERT_NAME: case OAP_CERT_DATES: return OAP_ROUTE_OK(p->pdf) ? "Trust it to use it" : "Certificate problem";
         case OAP_CERT_BAD: return "Certificate problem";
         }
     }
     if (p->pdf == OAP_PDF_YES)
         return oap_printer_is_secure(p) ? "Ready (encrypted)" : "Ready";
+    if (p->pdf == OAP_PDF_RASTER)
+        return oap_printer_is_secure(p) ? "Ready, raster (encrypted)" : "Ready, raster";
     if (p->pdf == OAP_PDF_NO)
         return "Can't print PDF";
     return "Not verified";
@@ -254,7 +256,7 @@ static OAPPrinter *selected_printer(void)
 static int usable(void)
 {
     OAPPrinter *p = selected_printer();
-    return p && p->pdf == OAP_PDF_YES && (oap_printer_ready(p) || needs_trust(p)) && !P.scanning;
+    return p && OAP_ROUTE_OK(p->pdf) && (oap_printer_ready(p) || needs_trust(p)) && !P.scanning;
 }
 
 static void show_details(void)
@@ -298,7 +300,7 @@ static void fill_printers(void)
         OAPPrinter *p = &P.known.printer[i];
         const char *cells[3];
         Row *r = &P.prow[P.rows];
-        if (oap_printer_is_file(p) || (!P.show_all && p->pdf != OAP_PDF_YES))
+        if (oap_printer_is_file(p) || (!P.show_all && !OAP_ROUTE_OK(p->pdf)))
             continue;
         snprintf(name, sizeof(name), "%s%s", p->name, !strcmp(p->uri, P.default_uri) ? " *" : "");
         cells[0] = name;
@@ -499,7 +501,7 @@ static void use_printer(void)
 {
     OAPPrinter *p = selected_printer();
     char error[256], text[300];
-    if (p && needs_trust(p) && p->pdf == OAP_PDF_YES) {
+    if (p && needs_trust(p) && OAP_ROUTE_OK(p->pdf)) {
         if (!ask_trust(p)) {
             show_status("Not trusted: GFOpenPrint won't print to it");
             return;

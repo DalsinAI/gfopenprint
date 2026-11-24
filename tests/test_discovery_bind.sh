@@ -13,6 +13,7 @@ CC=${HOST_CC:-cc}
 "$CC" -shared -fPIC "$ROOT/tests/host/gfos_bind.c" -o "$OUT/gfos_bind.so" -ldl
 "$CC" -I"$ROOT/include" -O2 -Wall -Wextra -Werror \
     "$ROOT"/src/discovery/*.c "$ROOT/src/core/ipp.c" "$ROOT/src/core/job.c" "$ROOT"/src/net/*.c "$ROOT/src/tls/tls.c" "$ROOT/src/tls/trust.c" \
+    "$ROOT/src/core/pdf2pwg.c" "$ROOT/src/core/pwg.c" "$ROOT/src/core/pdfr.c" "$ROOT/src/core/inflate.c" "$ROOT/src/core/raster_font_none.c" \
     -o "$OUT/discover"
 GFOS_BIND_LOG="$OUT/queries.log" LD_PRELOAD="$OUT/gfos_bind.so" "$OUT/discover" "$OUT/result.tsv"
 [ -s "$OUT/queries.log" ] || { echo 'FAIL: no mDNS query was sent'; exit 1; }

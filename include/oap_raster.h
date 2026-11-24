@@ -6,6 +6,7 @@
 #define OAP_RASTER_H
 #include <stddef.h>
 #include <stdio.h>
+#include "oap_pdfr.h"
 
 #define OAP_FORMAT_PWG "image/pwg-raster"
 #define OAP_PWG_HEADER 1796
@@ -51,4 +52,22 @@ int oap_pwg_row(OAPPwgWriter *w, const unsigned char *row);
 /* Ends the page: every row given (height of them). 1 when all was written. */
 int oap_pwg_end_page(OAPPwgWriter *w);
 void oap_pwg_free(OAPPwgWriter *w);
+
+/* GFOpenPrint's own PDF (oap_pdfr.h) as a PWG Raster stream, for a printer that takes no PDF. A page wider than
+ * tall is turned a quarter (its top to the paper's left) to stand on upright paper, as a printer does with a
+ * landscape PDF. Pages first..last (1 first; 0, 0 for all). copies, sides and media go as IPP job attributes. */
+typedef struct OAPRasterJob {
+    unsigned long dpi;                  /* from pwg-raster-document-resolution-supported */
+    int rgb;                            /* srgb_8, else sgray_8 */
+    int first, last;
+    const char *media_name;             /* for the page headers, e.g. "iso_a4_210x297mm" (or NULL) */
+    OAPDrawChar draw; void *draw_ctx;   /* the text font: NULL refuses pages with text */
+} OAPRasterJob;
+/* Pages written, or 0 with words in err. */
+unsigned long oap_pdf_to_pwg(const unsigned char *pdf, size_t len, const OAPRasterJob *job,
+                             OAPPwgWrite write, void *ctx, char *err, size_t cap);
+/* The text font for raster pages: src/amiga/raster_font.c on the Amiga (diskfont), a stand-in in tests. NULL when
+ * there is none; close lets it go. */
+OAPDrawChar oap_raster_font(void **ctx);
+void oap_raster_font_close(void);
 #endif

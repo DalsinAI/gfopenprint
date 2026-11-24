@@ -343,6 +343,22 @@ static void put_row(const Render *r, long y, long x0, long x1, const unsigned ch
     }
 }
 
+/* Canvas pixels x0..x1, y0..y1 (ends excluded) in one grey, inside the clip */
+static void box(const Render *r, long x0, long y0, long x1, long y1, unsigned char grey)
+{
+    OAPCanvas *c = r->c;
+    long x, y;
+    if (x0 < r->clip_x0) x0 = r->clip_x0;
+    if (y0 < r->clip_y0) y0 = r->clip_y0;
+    if (x1 > r->clip_x1) x1 = r->clip_x1;
+    if (y1 > r->clip_y1) y1 = r->clip_y1;
+    for (y = y0; y < y1; y++)
+        for (x = x0; x < x1; x++)
+            memset(c->pix + ((size_t)y * c->w + (size_t)x) * (size_t)c->channels, grey, (size_t)c->channels);
+}
+
+static unsigned char grey_of(double g) { return (unsigned char)(g <= 0 ? 0 : g >= 1 ? 255 : g * 255 + 0.5); }
+
 static int picture(const Render *r, Lex *l, Matrix m, char *err, size_t cap)
 {
     Tok t, v;
@@ -502,7 +518,7 @@ int oap_pdfr_render(const OAPPdfDoc *d, unsigned long page, OAPCanvas *c,
     int count = 0, in_text = 0, depth = 0;
     Matrix ctm = {1, 0, 0, 1, 0, 0}, stack[16], tlm = {1, 0, 0, 1, 0, 0};
     long clips[16][4];
-    double size = 0, page_w;
+    double size = 0, page_w, fill = 0, stroke = 0, line = 1, gstack[16][3];
     Render r;
     if (!c || !c->pix || (c->channels != 1 && c->channels != 3) || !c->dpi)
         return fail(err, cap, "No page to draw on");
@@ -522,6 +538,7 @@ int oap_pdfr_render(const OAPPdfDoc *d, unsigned long page, OAPCanvas *c,
             Tok op;
             if (next(&l, &op) != T_OP || !op_is(&op, "Tj") || !in_text || size <= 0)
                 return fail(err, cap, "This PDF's text is not GFOpenPrint's own");
+            if (!draw) return fail(err, cap, "No font to draw this page's text with");
             show(&r, &t, mul(tlm, ctm), size);
             count = 0;
             continue;
@@ -546,22 +563,37 @@ int oap_pdfr_render(const OAPPdfDoc *d, unsigned long page, OAPCanvas *c,
             Matrix tr = {1, 0, 0, 1, 0, 0};
             tr.e = nums[0].num; tr.f = nums[1].num;
             tlm = mul(tr, tlm);
-        } else if (op_is(&t, "q")) { if (depth >= 16) return fail(err, cap, "This PDF saves too deep"); clips[depth][0] = r.clip_x0; clips[depth][1] = r.clip_y0; clips[depth][2] = r.clip_x1; clips[depth][3] = r.clip_y1; stack[depth++] = ctm; }
-        else if (op_is(&t, "Q")) { if (!depth) return fail(err, cap, "This PDF restores what it never saved"); ctm = stack[--depth]; r.clip_x0 = clips[depth][0]; r.clip_y0 = clips[depth][1]; r.clip_x1 = clips[depth][2]; r.clip_y1 = clips[depth][3]; }
+        } else if (op_is(&t, "q")) { if (depth >= 16) return fail(err, cap, "This PDF saves too deep"); clips[depth][0] = r.clip_x0; clips[depth][1] = r.clip_y0; clips[depth][2] = r.clip_x1; clips[depth][3] = r.clip_y1; gstack[depth][0] = fill; gstack[depth][1] = stroke; gstack[depth][2] = line; stack[depth++] = ctm; }
+        else if (op_is(&t, "Q")) { if (!depth) return fail(err, cap, "This PDF restores what it never saved"); ctm = stack[--depth]; fill = gstack[depth][0]; stroke = gstack[depth][1]; line = gstack[depth][2]; r.clip_x0 = clips[depth][0]; r.clip_y0 = clips[depth][1]; r.clip_x1 = clips[depth][2]; r.clip_y1 = clips[depth][3]; }
         else if (op_is(&t, "cm") && count == 6) {
             Matrix m;
             m.a = nums[0].num; m.b = nums[1].num; m.c = nums[2].num; m.d = nums[3].num; m.e = nums[4].num; m.f = nums[5].num;
             ctm = mul(m, ctm);
-        } else if (op_is(&t, "re") && count == 4 && !in_text) {
-            /* only as a clip (re W n), the way GFOpenView crops a picture to the paper's printable part */
+        } else if (op_is(&t, "g") && count == 1) fill = nums[0].num;
+        else if (op_is(&t, "G") && count == 1) stroke = nums[0].num;
+        else if (op_is(&t, "w") && count == 1 && nums[0].num >= 0) line = nums[0].num;
+        else if (op_is(&t, "re") && count == 4 && !in_text) {
+            /* a clip (re W n), the way GFOpenView crops a picture to the paper's printable part; or a box filled
+             * (re f) or outlined (re S), as the test page has; upright only */
             Tok w1, n1;
             double x = nums[0].num, y = nums[1].num, cw = nums[2].num, ch = nums[3].num;
             long a, b, cc, dd;
-            if (next(&l, &w1) != T_OP || !op_is(&w1, "W") || next(&l, &n1) != T_OP || !op_is(&n1, "n") ||
-                ctm.b != 0 || ctm.c != 0 || ctm.a <= 0 || ctm.d <= 0)
+            if (next(&l, &w1) != T_OP || ctm.b != 0 || ctm.c != 0 || ctm.a <= 0 || ctm.d <= 0 || cw < 0 || ch < 0)
                 return fail(err, cap, "This PDF's page draws in ways GFOpenPrint's own PDFs never do: it needs a printer that takes PDF");
             a = px_x(&r, ctm.a * x + ctm.e); cc = px_x(&r, ctm.a * (x + cw) + ctm.e);
             b = px_y(&r, ctm.d * (y + ch) + ctm.f); dd = px_y(&r, ctm.d * y + ctm.f);
+            if (op_is(&w1, "f")) { box(&r, a, b, cc, dd, grey_of(fill)); count = 0; continue; }
+            if (op_is(&w1, "S")) {
+                long lw = (long)(line * ctm.a * r.scale + 0.5), h0, h1;
+                unsigned char gs = grey_of(stroke);
+                if (lw < 1) lw = 1;
+                h0 = lw / 2; h1 = lw - h0;
+                box(&r, a - h0, b - h0, cc + h1, b + h1, gs); box(&r, a - h0, dd - h0, cc + h1, dd + h1, gs);
+                box(&r, a - h0, b - h0, a + h1, dd + h1, gs); box(&r, cc - h0, b - h0, cc + h1, dd + h1, gs);
+                count = 0; continue;
+            }
+            if (!op_is(&w1, "W") || next(&l, &n1) != T_OP || !op_is(&n1, "n"))
+                return fail(err, cap, "This PDF's page draws in ways GFOpenPrint's own PDFs never do: it needs a printer that takes PDF");
             if (a > r.clip_x0) r.clip_x0 = a;
             if (b > r.clip_y0) r.clip_y0 = b;
             if (cc < r.clip_x1) r.clip_x1 = cc;

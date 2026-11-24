@@ -44,7 +44,8 @@ int oap_ps_title(const unsigned char *head, size_t n, char *out, size_t cap);
 int oap_parse_ipp_uri(const char *uri, OAPUri *out);
 /* The Print-Job request up to the document: oap_ipp_build_prefix's for a PDF, every job setting (copies, media,
  * orientation, colour, sides, pages). PostScript (format OAP_FORMAT_PS) sets its own paper and pages, so it gets
- * document-format, job-name and copies only. */
+ * document-format, job-name and copies only. PWG Raster ("image/pwg-raster") pages are made upright and of the
+ * pages asked for, so they get no orientation-requested and no page-ranges. */
 int oap_ipp_build_prefix(const OAPJobOptions *o, unsigned char *buf, size_t cap, size_t *out_len);
 int oap_ipp_build_prefix_doc(const OAPJobOptions *o, const char *format, unsigned char *buf, size_t cap, size_t *out_len);
 /* A paper's IPP media name (PWG 5101.1): iso_a4_210x297mm, na_letter_8.5x11in...; A4's for an unknown one. */

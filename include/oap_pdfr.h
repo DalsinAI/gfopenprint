@@ -31,7 +31,8 @@ typedef struct OAPPdfDoc {
 int oap_pdfr_open(OAPPdfDoc *d, const unsigned char *pdf, size_t len, char *err, size_t cap);
 /* A page's paper, in points. */
 int oap_pdfr_page_size(const OAPPdfDoc *d, unsigned long page, unsigned long *w_pt, unsigned long *h_pt);
-/* Draws page (0 first) onto c, which the caller has made white and sized to the page at c->dpi. */
+/* Draws page (0 first) onto c, which the caller has made white and sized to the page at c->dpi. A page with text
+ * and no draw is refused. */
 int oap_pdfr_render(const OAPPdfDoc *d, unsigned long page, OAPCanvas *c,
                     OAPDrawChar draw, void *ctx, char *err, size_t cap);
 #endif

@@ -28,7 +28,7 @@ int oap_printer_is_secure(const OAPPrinter *p)
 
 int oap_printer_ready(const OAPPrinter *p)
 {
-    return p && p->pdf == OAP_PDF_YES && (!oap_printer_is_secure(p) || oap_cert_usable(p->cert));
+    return p && OAP_ROUTE_OK(p->pdf) && (!oap_printer_is_secure(p) || oap_cert_usable(p->cert));
 }
 
 void oap_printer_name_from_uri(const char *uri, char *name, size_t cap)
@@ -180,7 +180,7 @@ int oap_printers_merge(OAPPrinterList *list, const OAPDiscovery *scan)
         int at;
         if (!d->uri[0] || !d->alive)
             continue;
-        oap_printers_put(list, d->uri, name, d->caps.pdf, d->note);
+        oap_printers_put(list, d->uri, name, oap_caps_route(&d->caps), d->note);
         at = oap_printers_find(list, d->uri);
         if (at < 0 || !d->secure)
             continue;

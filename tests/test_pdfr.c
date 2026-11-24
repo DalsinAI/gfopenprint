@@ -136,6 +136,30 @@ static void test_picture(void)
     free(pdf);
 }
 
+/* Printers and Queue's test page (src/core/pdf_demo.c): a grey box with a black edge, and its text */
+int oap_pdf_write_demo(const char *path, const char *title);
+static void test_test_page(void)
+{
+    OAPPdfDoc d;
+    OAPCanvas c;
+    char err[160];
+    size_t n;
+    unsigned char *pdf;
+    CHECK(oap_pdf_write_demo("build/test-page.pdf", "GFOpenPrint test page"));
+    pdf = load("build/test-page.pdf", &n);
+    if (!pdf) return;
+    CHECK(oap_pdfr_open(&d, pdf, n, err, sizeof(err)) && canvas(&c, &d, 0, 72, 1));
+    ndrawn = 0;
+    CHECK(oap_pdfr_render(&d, 0, &c, draw, NULL, err, sizeof(err)) || (printf("%s\n", err), 0));
+    CHECK(ndrawn == strlen("GFOpenPrint") + strlen("GFOpenPrinttestpage") + strlen("PDFgeneration+nativeIPPprintingfirstlight"));
+    /* the box: 40,560 515 x 210 pt, so canvas x 40-555, y 72-282 at 72 dpi */
+    CHECK(c.pix[150 * c.w + 300] == 240);                       /* 0.94 g inside */
+    CHECK(c.pix[150 * c.w + 40] == 0 && c.pix[72 * c.w + 300] == 0 && c.pix[282 * c.w + 300] == 0 && c.pix[150 * c.w + 555] == 0);
+    CHECK(c.pix[150 * c.w + 38] == 255 && c.pix[300 * c.w + 300] == 255 && c.pix[60 * c.w + 300] == 255);
+    free(c.pix); free(pdf);
+    remove("build/test-page.pdf");
+}
+
 /* Not GFOpenPrint's: refused, with words, never drawn wrong. */
 static void test_refused(void)
 {
@@ -277,6 +301,7 @@ int main(void)
     test_latin1();
     test_picture();
     test_refused();
+    test_test_page();
     test_inflate();
     test_viewer_pdf();
     printf("test_pdfr: %d checks, %d failed\n", checks, failures);

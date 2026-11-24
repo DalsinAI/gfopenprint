@@ -11,7 +11,8 @@ FLAGS="-m68040 -specs=$ROOT/specs/m68k-soft-m68040.specs -fno-common -O2 -fno-de
 "$CC" $FLAGS -I"$ROOT/include" $TLS_FLAGS -o "$OUT/OAVWorker" \
  "$ROOT/src/viewer/oav_core.c" "$ROOT/src/viewer/oav_jobs.c" "$ROOT/src/viewer/oav_worker.c" "$ROOT/src/amiga/oap_stack.c" \
  "$ROOT/src/discovery/protocol.c" "$ROOT/src/discovery/http.c" "$ROOT/src/core/job.c" "$ROOT/src/core/ipp.c" \
- "$ROOT/src/net/conn.c" "$ROOT/src/net/ipp_client.c" "$ROOT/src/net/ipp_submit.c" "$ROOT/src/net/http_auth.c" "$ROOT/src/net/mdns.c" $TLS_SOURCES -lamiga
+ "$ROOT/src/net/conn.c" "$ROOT/src/net/ipp_client.c" "$ROOT/src/net/ipp_submit.c" "$ROOT/src/net/http_auth.c" "$ROOT/src/net/mdns.c" \
+ "$ROOT/src/core/pdf2pwg.c" "$ROOT/src/core/pwg.c" "$ROOT/src/core/pdfr.c" "$ROOT/src/core/inflate.c" "$ROOT/src/amiga/raster_font.c" $TLS_SOURCES -lamiga
 python3 "$ROOT/tools/make_oap_app_icon.py" "$OUT/GFOpenView.info"
 python3 - "$OUT/GFOpenView.info" <<'PYICON'
 import struct, sys
