@@ -1,0 +1,28 @@
+GFOpenPrint 0.4-rc1 (release candidate, 24 November 2026)
+
+Prints from AmigaOS to the PDF printers on your network over IPP and IPPS,
+and saves documents as PDF files. GFOpenView shows and prints pictures.
+
+New in this candidate
+- Printers are found on GFOS again (BL-134). Printers and Queue found no
+  printer on GFOS machines whose network is not in LAN address mode: the
+  search sent its questions from the PC's own internal address, where no
+  printer can answer. It now sends them from the LAN address. In a lab on
+  the same LAN the old search had no replies; this one found both HP
+  printers (12 replies).
+- Since 0.3: pictures printed at the paper's resolution and Flate-compressed
+  (#48), a stalled upload ends, GFOpenView's ARexx port with ACTIVATE,
+  FAULT, VERSION and HELP (#47), ARexx return codes and no requesters
+  (#49), GFOpenTLS by its GF name gfopentls.library (#45), Soft 3D package
+  icons.
+
+Built
+- With GFOpenAmigaGCC 16.2.0-open9 (the kitchen's os32-gcc16-open9 stove)
+  from gfopenprint main, by build-rc.sh. BUILD-INFO.txt in the package
+  names the commit.
+
+Not checked yet
+- A printed page on paper from this candidate. Discovery and the PDF check
+  were seen in a lab; physical printing is checked by hand.
+
+Install: double-click "Install GFOpenPrint" in the drawer.
