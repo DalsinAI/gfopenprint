@@ -5,9 +5,9 @@ CFLAGS ?= -O2 -Wall -Wextra -Werror -std=c11
 CPPFLAGS += -Iinclude
 CORE = src/core/job.c src/core/ipp.c src/core/pdf_demo.c
 
-.PHONY: all test clean test-core test-discovery test-submit test-auth test-viewer test-driver test-discovery-sendfail test-discovery-bind test-build-out test-build-rc test-ipps test-paper test-paper-page test-rawps test-pwg
+.PHONY: all test clean test-core test-discovery test-submit test-auth test-viewer test-driver test-discovery-sendfail test-discovery-bind test-build-out test-build-rc test-ipps test-paper test-paper-page test-rawps test-pwg test-pdfr
 all: test
-test: test-core test-discovery test-submit test-auth test-viewer test-driver test-discovery-sendfail test-discovery-bind test-build-out test-build-rc test-paper test-paper-page test-pwg
+test: test-core test-discovery test-submit test-auth test-viewer test-driver test-discovery-sendfail test-discovery-bind test-build-out test-build-rc test-paper test-paper-page test-pwg test-pdfr
 
 build/test_core: tests/test_core.c $(CORE) include/oap.h
 	mkdir -p build
@@ -52,6 +52,14 @@ build/test_pwg: tests/test_pwg.c src/core/pwg.c include/oap_raster.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ tests/test_pwg.c src/core/pwg.c
 test-pwg: build/test_pwg
 	./build/test_pwg
+
+# GFOpenPrint's own PDFs (the driver's, GFOpenView's) as page pixels for raster printers; reads the PDFs
+# test-driver writes to build/, and makes GFOpenView PDFs with oav_core.c
+build/test_pdfr: tests/test_pdfr.c src/core/pdfr.c src/core/inflate.c src/viewer/oav_core.c include/oap_pdfr.h include/oap_inflate.h
+	mkdir -p build
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D_GNU_SOURCE -o $@ tests/test_pdfr.c src/core/pdfr.c src/core/inflate.c src/viewer/oav_core.c
+test-pdfr: build/test_pdfr test-driver
+	./build/test_pdfr
 
 test-discovery-sendfail:
 	sh tests/test_discovery_sendfail.sh

@@ -184,6 +184,16 @@ static long picture_bytes(unsigned char *dst, long cap)
     return i < n ? m : -1;                          /* -1: no end of the runs */
 }
 
+/* The PDF as written, for test_pdfr (GFO-254: these pages drawn as pixels for raster printers). */
+static void save(const char *path)
+{
+    FILE *f = fopen(path, "wb");
+    if (f) {
+        fwrite(out, 1, out_len, f);
+        fclose(f);
+    }
+}
+
 static long pages(void)
 {
     const char *p = find(out, "/Type /Pages /Count ");
@@ -238,6 +248,7 @@ int main(void)
     CHECK(find(out, "0 -11.7 Td") != NULL, "66 lines on A4: spacing 11.7 expected");
     CHECK(allocs == 0, "%ld AllocMem not freed", allocs);
     CHECK(writes > 300 && writes < 340, "%ld writes to the port for 300 lines: a line at a time expected", writes);
+    save("build/driver-300-lines.pdf");
 
     name = "2700 lines: 41 pages (more than 32)";
     start(EURO_A4, 66, PICA, SIX_LPI, ASPECT_HORIZ);
@@ -284,6 +295,7 @@ int main(void)
     check_pdf(name);
     CHECK(count("/BaseFont /Courier /Encoding /WinAnsiEncoding") == 1, "Courier without /Encoding /WinAnsiEncoding: accents print as other signs");
     CHECK(find(out, "(Gr\\374\\337e, \\351t\\351 \\243) Tj") != NULL, "the letters' codes");
+    save("build/driver-latin1.pdf");
 
     name = "text holding %%EOF: the PDF's only %%EOF is its last line";
     start(EURO_A4, 66, PICA, SIX_LPI, ASPECT_HORIZ);
@@ -320,6 +332,7 @@ int main(void)
     oap_close(NULL);
     check_pdf(name);
     CHECK(pages() == 2, "%ld pages, not 2 (the picture's, then the text's)", pages());
+    save("build/driver-picture.pdf");
     CHECK(count("/MediaBox [0 0 842 595]") == 1 && count("/MediaBox [0 0 595 842]") == 1, "the picture's page turned, the text's upright");
     CHECK(find(out, "BI /W 5 /H 2") != NULL, "the picture's size");
     {
