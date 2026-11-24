@@ -27,7 +27,7 @@ int oap_http_post(OAPConn *c,const OAPUri *u,unsigned long len,const char *auth)
 int oap_ipp_login(OAPConn *c,const OAPUri *u,const OAPHttpReply *r,unsigned k,char *a,size_t cap,char *note,size_t nc){
  (void)c;(void)k;CHECK(r->status==401);if(!u->secure){snprintf(note,nc,"passwords only over ipps://");return 0;}snprintf(a,cap,"Authorization: Basic eA==\r\n");return 1;}
 int oap_query_pdf(const char *uri,OAPCaps *c,OAPTlsInfo *t,char *note,size_t n){
- queried++;memset(c,0,sizeof(*c));c->pdf=mode==1||raster_caps?OAP_PDF_NO:OAP_PDF_YES;c->ps=ps_caps;c->accepting=1;c->color=1;
+ queried++;memset(c,0,sizeof(*c));c->pdf=mode==1||raster_caps==1?OAP_PDF_NO:OAP_PDF_YES;c->ps=ps_caps;c->accepting=1;c->color=1;
  if(raster_caps){c->pwg=OAP_PDF_YES;c->pwg_dpi=100;c->pwg_types=OAP_PWG_GREY8;c->color=0;c->duplex=1;}
  if(t){memset(t,0,sizeof(*t));t->verdict=!strncmp(uri,"ipps://",7)?(mode==7?OAP_CERT_ASK:mode==8?OAP_CERT_NOTLS:OAP_CERT_TRUSTED):OAP_CERT_NONE;}
  snprintf(note,n,"mock query");return mode!=8;
@@ -123,7 +123,14 @@ static void raster_jobs(void){
  f=fopen("build/submit-test-raster.ps","wb");CHECK(f!=NULL);fputs("%!PS\nshowpage\n",f);fclose(f);
  reset(0,0);rc=oap_ipp_submit_doc_ex("build/submit-test-raster.ps",&o,status,sizeof(status),progress,NULL);
  CHECK(rc==OAP_SEND_ERROR&&writes==0&&strstr(status,"PostScript")!=NULL);remove("build/submit-test-raster.ps");
- raster_caps=0;ps_caps=OAP_PDF_YES;
+ /* a printer that takes PDF and raster: raster only when asked (o.raster), and refused when it can't */
+ raster_caps=2;o.raster=0;reset(0,0);rc=oap_ipp_submit_pdf_ex("build/driver-300-lines.pdf",&o,status,sizeof(status),progress,NULL);
+ CHECK(rc==OAP_SEND_ACCEPTED&&count("application/pdf")==1&&!count("RaS2"));
+ o.raster=1;reset(0,0);rc=oap_ipp_submit_pdf_ex("build/driver-300-lines.pdf",&o,status,sizeof(status),progress,NULL);
+ CHECK(rc==OAP_SEND_ACCEPTED&&count("image/pwg-raster")==1&&count("RaS2")==1);
+ raster_caps=0;reset(0,0);rc=oap_ipp_submit_pdf_ex("build/driver-300-lines.pdf",&o,status,sizeof(status),progress,NULL);
+ CHECK(rc==OAP_SEND_ERROR&&writes==0&&strstr(status,"PWG Raster")!=NULL);
+ o.raster=0;raster_caps=0;ps_caps=OAP_PDF_YES;
 }
 int main(void){
  OAPJobOptions o;char status[256];FILE *f;int rc,i;

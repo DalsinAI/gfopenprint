@@ -21,6 +21,11 @@ typedef struct OAPConn OAPConn;
 
 int oap_net_start(void);                /* 1: bsdsocket.library is open */
 void oap_net_stop(void);
+/* This machine's address as the printer at host sees it (the route a packet to host:port takes; nothing is
+ * sent), dotted, into out. 1 when known. For the test page's "sent from". */
+int oap_net_local_ip(const char *host, unsigned port, char *out, size_t cap);
+/* This machine's host name (gethostname). 1 when known. */
+int oap_net_host_name(char *out, size_t cap);
 
 /* Connects to the address's host and port within a few seconds; for
  * ipps:// it then starts TLS (`tls_mode`: OAP_TLS_VERIFY or OAP_TLS_LOOK)
@@ -38,6 +43,8 @@ int oap_conn_write(OAPConn *c, const void *data, size_t n, unsigned seconds);
 #define OAP_CONN_ERROR (-1)
 long oap_conn_read(OAPConn *c, void *buf, size_t n, unsigned millis);
 void oap_conn_close(OAPConn *c);
+/* Asks the printer about a job it accepted (Get-Job-Attributes): 1 with js filled, 0 with the reason in note. */
+int oap_query_job(const char *uri, unsigned long job, OAPJobState *js, char *note, size_t note_cap);
 
 /* The HTTP request line and headers of an IPP POST of `length` bytes;
  * `authorization` is a whole "Authorization: ...\r\n" line, or NULL. */

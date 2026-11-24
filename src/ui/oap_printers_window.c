@@ -27,6 +27,7 @@
 #include "oap_discovery.h"
 #include "oap_gt.h"
 #include "oap_printers.h"
+#include "oap_testpage_amiga.h"
 #include "oap_stack.h"
 #include "oap_queue.h"
 #include "oap_selection.h"
@@ -55,7 +56,7 @@
 struct IntuitionBase *IntuitionBase;
 struct GfxBase *GfxBase;
 struct Library *GadToolsBase;
-static const char oap_version[] __attribute__((used)) = "$VER: OAPPrinters 0.4 (10.10.2026)";
+static const char oap_version[] __attribute__((used)) = "$VER: OAPPrinters 0.5 (24.11.2026)";
 
 #define QUEUE_MAX 48
 #define ROW_MAX 400
@@ -536,9 +537,17 @@ static void test_page(void)
             show_status("Trust the printer first: click Use for printing");
         return;
     }
-    if (!oap_pdf_write_demo("T:GFOpenPrint-TestPage.pdf", "GFOpenPrint test page")) {
-        show_status("Couldn't write the test page to T:");
-        return;
+    {
+        /* the GFOS test page: colour, grey, this Amiga, its drivers, the printer and the address it's sent from */
+        OAPTestPage *t = malloc(sizeof(*t));
+        int ok;
+        if (!t) { show_status("Not enough memory for the test page"); return; }
+        show_status("Making the test page...");
+        oap_testpage_init(t, "GFOS test page", "GFOpenPrint: colour, grey and what printed this page");
+        oap_testpage_amiga(t, p->name, p->uri, p->pdf, p->note, oap_version + 6);
+        ok = oap_pdf_write_testpage("T:GFOpenPrint-TestPage.pdf", t);
+        free(t);
+        if (!ok) { show_status("Couldn't write the test page to T:"); return; }
     }
     oap_program_path("GFOpenPrint", program, sizeof(program));
     snprintf(cmd, sizeof(cmd), "\"%s\" \"T:GFOpenPrint-TestPage.pdf\" \"%s\"", program, p->uri);
@@ -600,7 +609,9 @@ static void read_job(QueueRow *r)
     copy(r->state, sizeof(r->state), !strcmp(state, "queued") ? "Waiting" : !strcmp(state, "submitted") ? "Sent"
                                       : !strcmp(state, "uncertain") ? "Unknown: check the printer"
                                       : !strcmp(state, "uploading") ? "Sending" : !strcmp(state, "error") ? "Failed"
-                                      : !strcmp(state, "cancelled") ? "Stopped" : state);
+                                      : !strcmp(state, "cancelled") ? "Stopped" : !strcmp(state, "printing") ? "Printing"
+                                      : !strcmp(state, "printed") ? "Printed" : !strcmp(state, "printer-failed") ? "Failed at the printer"
+                                      : state);
     r->printer[0] = 0;
     for (i = 0; printer[0] && i < P.known.count; i++)
         if (!strcmp(P.known.printer[i].uri, printer))

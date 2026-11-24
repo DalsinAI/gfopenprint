@@ -16,7 +16,8 @@ FLAGS="-m68040 -specs=$ROOT/specs/m68k-soft-m68040.specs -fno-common -O2 -fno-de
 NET="$ROOT/src/net/conn.c $ROOT/src/net/ipp_client.c $ROOT/src/net/http_auth.c $ROOT/src/net/mdns.c"
 "$CC" $FLAGS -I"$ROOT/include" $TLS_FLAGS "$ROOT"/src/discovery/*.c "$ROOT/src/core/ipp.c" $NET $TLS_SOURCES "$ROOT/src/amiga/oap_stack.c" -lamiga -o "$OUT/OAPDiscover"
 # Printers and Queue (the 3 Oct 2026 redesign): the browser and the queue in one ReAction window.
-"$CC" $FLAGS -I"$ROOT/include" "$ROOT/src/ui/oap_printers_window.c" "$ROOT/src/ui/oap_gt.c" "$ROOT/src/ui/oap_printers.c" "$ROOT/src/amiga/oap_stack.c" "$ROOT/src/amiga/selection_events.c" "$ROOT/src/amiga/printer_preferences.c" "$ROOT/src/discovery/protocol.c" "$ROOT/src/core/pdf_demo.c" "$ROOT/src/core/ipp.c" "$ROOT/src/tls/tls.c" "$ROOT/src/tls/trust.c" -lamiga -o "$OUT/OAPPrinters"
+"$CC" $FLAGS -I"$ROOT/include" "$ROOT/src/ui/oap_printers_window.c" "$ROOT/src/ui/oap_gt.c" "$ROOT/src/ui/oap_printers.c" "$ROOT/src/amiga/oap_stack.c" "$ROOT/src/amiga/selection_events.c" "$ROOT/src/amiga/printer_preferences.c" "$ROOT/src/discovery/protocol.c" "$ROOT/src/core/pdf_demo.c" "$ROOT/src/core/ipp.c" "$ROOT/src/tls/tls.c" "$ROOT/src/tls/trust.c" \
+ "$ROOT/src/core/testpage.c" "$ROOT/src/amiga/testpage_info.c" "$ROOT/src/core/paper.c" "$ROOT/src/net/conn.c" "$ROOT/src/net/mdns.c" -lamiga -o "$OUT/OAPPrinters"
 python3 "$ROOT/tools/make_oap_app_icon.py" "$OUT/OAPPrinters.info"
 file "$OUT/OAPDiscover" "$OUT/OAPPrinters"
 

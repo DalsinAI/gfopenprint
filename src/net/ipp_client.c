@@ -193,3 +193,35 @@ int oap_query_pdf(const char *uri_text, OAPCaps *caps, OAPTlsInfo *tls, char *no
     }
     return 1;
 }
+
+int oap_query_job(const char *uri_text, unsigned long job, OAPJobState *js, char *note, size_t note_cap)
+{
+    unsigned char request[2048], *body = NULL;
+    size_t request_len, body_len;
+    const uint32_t id = 0x4f415002U;
+    OAPUri uri;
+    OAPConn *c = NULL;
+    OAPTlsInfo tls;
+    int ok = 0;
+    memset(js, 0, sizeof(*js));
+    note[0] = 0;
+    if (!oap_parse_ipp_uri(uri_text, &uri) || !job) { snprintf(note, note_cap, "No job to ask about"); return 0; }
+    request_len = oap_ipp_job_request(uri_text, id, (uint32_t)job, request, sizeof(request));
+    body = malloc(OAP_BODY_MAX);
+    if (!request_len || !body) { snprintf(note, note_cap, "Not enough memory"); goto out; }
+    c = oap_conn_open(&uri, OAP_TLS_VERIFY, &tls, note, note_cap);
+    if (!c) goto out;
+    if (!oap_http_post(c, &uri, request_len, NULL) || !oap_conn_write(c, request, request_len, 5)) {
+        snprintf(note, note_cap, "Job query send failed"); goto out;
+    }
+    if (!oap_receive_ipp(c, body, OAP_BODY_MAX, &body_len, 8, NULL, note, note_cap)) goto out;
+    if (!oap_ipp_parse_job(body, body_len, id, js)) {
+        snprintf(note, note_cap, js->status >= 0x0400 ? "The printer no longer knows that job" : "The printer's answer about the job wasn't understood");
+        goto out;
+    }
+    ok = 1;
+out:
+    oap_conn_close(c);
+    free(body);
+    return ok;
+}

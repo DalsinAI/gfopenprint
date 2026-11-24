@@ -53,6 +53,9 @@ static void untrusted(const OAPTlsInfo *tls, char *status, size_t cap)
 #endif
 #endif
 
+static unsigned long last_job;               /* the job id of the last job a printer accepted */
+unsigned long oap_ipp_last_job_id(void) { return last_job; }
+
 static int to_file(void *ctx, const unsigned char *bytes, size_t n)
 {
     return fwrite(bytes, 1, n, (FILE *)ctx) == n;
@@ -166,7 +169,10 @@ static int submit(const char *pdf, const char *want, const OAPJobOptions *o,
         goto done;
     }
     /* no PDF, but PWG Raster: GFOpenPrint draws its own PDF's pages and sends those */
-    raster = !ps && s->capabilities.pdf != OAP_PDF_YES && s->capabilities.pwg == OAP_PDF_YES;
+    raster = !ps && (s->capabilities.pdf != OAP_PDF_YES || s->effective.raster) && s->capabilities.pwg == OAP_PDF_YES;
+    if (!ps && s->effective.raster && !raster) {
+        snprintf(status, cap, "Not sent: the printer doesn't take PWG Raster pages GFOpenPrint can make"); goto done;
+    }
     if (!ps && !raster && s->capabilities.pdf != OAP_PDF_YES) { snprintf(status, cap, "PDF not confirmed: %.180s", s->note); goto done; }
     if (s->capabilities.accepting == 0) { snprintf(status, cap, "Printer is not accepting jobs"); goto done; }
     if (!s->capabilities.color) s->effective.color = OAP_MONO;
@@ -278,6 +284,7 @@ static int submit(const char *pdf, const char *want, const OAPJobOptions *o,
     snprintf(status, cap, "Accepted job %lu by %.80s%s; not yet confirmed printed",
              (unsigned long)s->reply.job_id, s->uri.host, s->uri.secure ? " over IPPS" : "");
     result = OAP_SEND_ACCEPTED;
+    last_job = (unsigned long)s->reply.job_id;
     goto done;
 cancelled:
     result = attempted ? OAP_SEND_UNCERTAIN : OAP_SEND_CANCELLED;

@@ -13,6 +13,7 @@ typedef struct OAPJobOptions {
     int duplex;
     int page_start;
     int page_end;
+    int raster;                     /* 1: send PWG Raster pages even to a printer that takes PDF (tests, GFO-254) */
 } OAPJobOptions;
 
 /* The paper sizes: those GFOpenPrint's driver makes (src/driver/openprint_driver.c, geometry) and GFOpenPrefs'
@@ -63,6 +64,8 @@ int oap_ipp_submit_pdf_ex(const char *pdf_path,const OAPJobOptions *o,char *stat
 /* The same for a PDF or a PostScript document, by its first bytes. PostScript goes only to a printer that lists
  * application/postscript among its formats (else a plain "not sent"), as it is, byte for byte, named by its
  * %%Title when it has one; anything else is not sent. */
+/* The job id the printer gave the last job it accepted here (0: none yet), to ask after it (oap_query_job). */
+unsigned long oap_ipp_last_job_id(void);
 int oap_ipp_submit_doc_ex(const char *path,const OAPJobOptions *o,char *status,size_t status_len,
                           OAPSendProgress notify,void *ctx);
 #ifdef __amigaos__

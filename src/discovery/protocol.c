@@ -41,6 +41,59 @@ static int uri_host(const char *s){if(!*s)return 0;for(;*s;s++)if(!isalnum((unsi
 void oap_discovery_resolve(OAPDiscovery *d){size_t i,j;for(i=0;i<d->count;i++){OAPDiscovered *e=&d->printers[i];e->ip[0]=0;e->uri[0]=0;for(j=0;j<d->host_count;j++)if(nameeq(&e->target,&d->hosts[j].name)){strcpy(e->ip,d->hosts[j].ip);break;}if(e->alive&&e->have_srv&&e->ip[0]&&e->path[0]){char uri[640];snprintf(uri,sizeof(uri),"%s://%s:%u%s",e->secure?"ipps":"ipp",e->secure||uri_host(e->host)?e->host:e->ip,e->port,e->path);strcpy(e->uri,uri);}}}
 static int attr(unsigned char *p,size_t cap,size_t *x,unsigned tag,const char *name,const char *v){size_t a=strlen(name),b=strlen(v);if(a>65535||b>65535||*x+5+a+b>cap)return 0;p[(*x)++]=(unsigned char)tag;put16(p+*x,(unsigned)a);*x+=2;memcpy(p+*x,name,a);*x+=a;put16(p+*x,(unsigned)b);*x+=2;memcpy(p+*x,v,b);*x+=b;return 1;}
 size_t oap_ipp_query_request(const char *uri,uint32_t id,unsigned char *p,size_t cap){size_t x=9,i;static const char *a[]={"document-format-supported","printer-name","printer-make-and-model","printer-location","printer-state","printer-state-reasons","printer-is-accepting-jobs","color-supported","sides-supported","pwg-raster-document-resolution-supported","pwg-raster-document-type-supported"};if(cap<9)return 0;p[0]=1;p[1]=1;p[2]=0;p[3]=11;p[4]=(unsigned char)(id>>24);p[5]=(unsigned char)(id>>16);p[6]=(unsigned char)(id>>8);p[7]=(unsigned char)id;p[8]=1;if(!attr(p,cap,&x,0x47,"attributes-charset","utf-8")||!attr(p,cap,&x,0x48,"attributes-natural-language","en")||!attr(p,cap,&x,0x45,"printer-uri",uri))return 0;for(i=0;i<sizeof(a)/sizeof(*a);i++)if(!attr(p,cap,&x,0x44,i?"":"requested-attributes",a[i]))return 0;if(x==cap)return 0;p[x++]=3;return x;}
+/* Get-Job-Attributes (0x0009) for one job: its state, why, and how many pages (impressions) are done. */
+size_t oap_ipp_job_request(const char *uri,uint32_t id,uint32_t job,unsigned char *p,size_t cap)
+{
+    size_t x=9,i;
+    static const char *a[]={"job-state","job-state-reasons","job-impressions-completed","job-state-message"};
+    if(cap<9||!uri)return 0;
+    p[0]=1;p[1]=1;p[2]=0;p[3]=9;p[4]=(unsigned char)(id>>24);p[5]=(unsigned char)(id>>16);p[6]=(unsigned char)(id>>8);p[7]=(unsigned char)id;p[8]=1;
+    if(!attr(p,cap,&x,0x47,"attributes-charset","utf-8")||!attr(p,cap,&x,0x48,"attributes-natural-language","en")||!attr(p,cap,&x,0x45,"printer-uri",uri))return 0;
+    if(x+5+6+4>cap)return 0;
+    p[x++]=0x21;put16(p+x,6);x+=2;memcpy(p+x,"job-id",6);x+=6;put16(p+x,4);x+=2;
+    p[x++]=(unsigned char)(job>>24);p[x++]=(unsigned char)(job>>16);p[x++]=(unsigned char)(job>>8);p[x++]=(unsigned char)job;
+    for(i=0;i<sizeof(a)/sizeof(*a);i++)if(!attr(p,cap,&x,0x44,i?"":"requested-attributes",a[i]))return 0;
+    if(x==cap)return 0;
+    p[x++]=3;return x;
+}
+int oap_ipp_parse_job(const unsigned char *p,size_t n,uint32_t id,OAPJobState *out)
+{
+    OAPJobState j;size_t x=8;char name[256]="";unsigned group=0;int depth=0;
+    memset(&j,0,sizeof(j));
+    if(n<9||(p[0]!=1&&p[0]!=2)||u32(p+4)!=id)return 0;
+    j.status=u16(p+2);
+    while(x<n){
+        unsigned tag=p[x++],a,b;const unsigned char *v;
+        if(tag==3){if(depth)return 0;*out=j;return j.status<0x0100&&j.state>=3&&j.state<=9;}
+        if(tag<0x10){group=tag;name[0]=0;continue;}
+        if(n-x<2)return 0;
+        a=u16(p+x);x+=2;
+        if(a>255||n-x<a+2)return 0;
+        if(a){text(name,sizeof(name),p+x,a);x+=a;}else if(!name[0])return 0;
+        b=u16(p+x);x+=2;
+        if(n-x<b)return 0;
+        v=p+x;x+=b;
+        if(tag==0x34){if(++depth>16)return 0;continue;}
+        if(tag==0x37){if(!depth)return 0;depth--;continue;}
+        if(group!=2||depth)continue;
+        if(eq(name,"job-state")&&tag==0x23&&b==4)j.state=(int)u32(v);
+        else if(eq(name,"job-impressions-completed")&&tag==0x21&&b==4)j.pages=u32(v);
+        else if(eq(name,"job-state-message")&&(tag==0x41||tag==0x35))text(j.message,sizeof(j.message),v,b);
+        else if(eq(name,"job-state-reasons")&&tag==0x44){size_t used=strlen(j.reasons);if(used+2<sizeof(j.reasons)){if(used){j.reasons[used++]=',';j.reasons[used++]=' ';}text(j.reasons+used,sizeof(j.reasons)-used,v,b);}}
+    }
+    return 0;
+}
+int oap_job_state_words(const OAPJobState *j,char *out,size_t cap)
+{
+    static const char *const w[]={"waiting at the printer","held at the printer","printing","stopped at the printer","cancelled at the printer","failed at the printer","printed"};
+    const char *s=j&&j->state>=3&&j->state<=9?w[j->state-3]:"not known";
+    int n;
+    if(!out||!cap)return 0;
+    if(j&&j->state==9)n=snprintf(out,cap,"Printed: %lu page%s",(unsigned long)j->pages,j->pages==1?"":"s");
+    else if(j&&(j->state==7||j->state==8||j->state==6)&&(j->message[0]||j->reasons[0]))n=snprintf(out,cap,"%c%s: %s",s[0]-32,s+1,j->message[0]?j->message:j->reasons);
+    else n=snprintf(out,cap,"%c%s",s[0]-32,s+1);
+    return n>0&&j&&j->state>=7;      /* 1 once the job has ended */
+}
 int oap_ipp_parse_caps(const unsigned char *p,size_t n,uint32_t id,OAPCaps *out){OAPCaps c;size_t x=8;char name[256]="";unsigned group=0;int formats=0,depth=0,pwg=0;unsigned long best=0;memset(&c,0,sizeof(c));c.accepting=-1;if(n<9||(p[0]!=1&&p[0]!=2)||u32(p+4)!=id)return 0;c.status=u16(p+2);if(c.status>=0x0100)return 0;while(x<n){unsigned tag=p[x++],a,b;const unsigned char *v;if(tag==3){if(depth)return 0;if(formats&&!c.pdf)c.pdf=OAP_PDF_NO;if(formats&&!c.ps)c.ps=OAP_PDF_NO;if(formats){c.pwg=pwg&&c.pwg_types&&best?OAP_PDF_YES:OAP_PDF_NO;c.pwg_dpi=c.pwg==OAP_PDF_YES?best:0;if(c.pwg!=OAP_PDF_YES)c.pwg_types=0;}*out=c;return 1;}if(tag<0x10){group=tag;name[0]=0;continue;}if(n-x<2)return 0;a=u16(p+x);x+=2;if(a>255||n-x<a+2)return 0;if(a){text(name,sizeof(name),p+x,a);x+=a;}else if(!name[0])return 0;b=u16(p+x);x+=2;if(n-x<b)return 0;v=p+x;x+=b;if(tag==0x34){if(++depth>16)return 0;continue;}if(tag==0x37){if(!depth)return 0;depth--;continue;}if(group==2&&!depth&&eq(name,"job-id")&&tag==0x21&&b==4)c.job_id=u32(v);if(group!=4||depth)continue;
  if(eq(name,"document-format-supported")&&tag==0x49){formats=1;if(b==15&&memcmp(v,"application/pdf",15)==0)c.pdf=OAP_PDF_YES;if(b==22&&memcmp(v,"application/postscript",22)==0)c.ps=OAP_PDF_YES;if(b==16&&memcmp(v,"image/pwg-raster",16)==0)pwg=1;}
  else if(eq(name,"pwg-raster-document-resolution-supported")&&tag==0x32&&b==9&&v[8]==3&&u32(v)==u32(v+4)&&u32(v)>=72&&u32(v)<=1200){unsigned long r=u32(v);if(!best||(r>=300?r-300:300-r)<(best>=300?best-300:300-best)||((r>=300?r-300:300-r)==(best>=300?best-300:300-best)&&r<best))best=r;}

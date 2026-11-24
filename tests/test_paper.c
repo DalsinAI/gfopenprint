@@ -137,6 +137,13 @@ static void test_prefs_file(void)
           "the lab's two: Letter, then A5");
 
     /* not a whole FORM PREF: none */
+    {   /* the driver it names, for the test page */
+        char drv[32];
+        CHECK(oap_printer_prefs_driver(openprinter, sizeof openprinter, drv, sizeof drv) && !strcmp(drv, "OpenPrint"), "its driver: OpenPrint");
+        CHECK(oap_printer_prefs_driver(openprinter, sizeof openprinter, drv, 5) && !strcmp(drv, "Open"), "a driver name cut to fit");
+        CHECK(!oap_printer_prefs_driver(openprinter, 11, drv, sizeof drv) && !drv[0], "no driver from a short file");
+        CHECK(!oap_printer_prefs_driver(NULL, 0, drv, sizeof drv), "no driver from no file");
+    }
     CHECK(oap_printer_prefs_paper(NULL, 0) == OAP_PAGE_NONE, "no bytes");
     CHECK(oap_printer_prefs_paper(openprinter, 11) == OAP_PAGE_NONE, "under 12 bytes");
     CHECK(oap_printer_prefs_paper(openprinter, sizeof openprinter - 1) == OAP_PAGE_NONE, "cut short");

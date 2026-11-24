@@ -62,7 +62,8 @@ file "$OUT/OAVWorker"
 
 # The network, TLS and IPP code from the command line, for the lab: query, print, trust.
 "$CC" $APP -I"$ROOT/include" $TLS_FLAGS -o "$OUT/OAPIPPSTest" "$ROOT/tests/host/ipps_tool.c" "$ROOT/src/amiga/oap_stack.c" \
-  "$ROOT/src/discovery/protocol.c" "$ROOT/src/discovery/http.c" "$ROOT/src/core/job.c" "$ROOT/src/core/ipp.c" $NET $RASTER $TLS_SOURCES -lamiga
+  "$ROOT/src/discovery/protocol.c" "$ROOT/src/discovery/http.c" "$ROOT/src/core/job.c" "$ROOT/src/core/ipp.c" $NET $RASTER \
+  "$ROOT/src/core/testpage.c" "$ROOT/src/amiga/testpage_info.c" "$ROOT/src/core/paper.c" $TLS_SOURCES -lamiga
 file "$OUT/OAPIPPSTest"
 
 python3 "$ROOT/tools/make_oap_icon.py" "$OUT/GFOpenPrint.info"

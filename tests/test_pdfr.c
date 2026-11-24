@@ -167,11 +167,11 @@ static void test_refused(void)
     OAPCanvas c;
     char err[160], pdf[1400];
     unsigned char pix[100];
-    const char *body = "0 0 1 rg 10 10 50 50 re f\n";
+    const char *body = "0 0 1 rg 10 10 m 50 50 l 90 10 l f\n";    /* a path: GFOpenPrint draws only boxes */
     int len, off[6], n = 0;
     CHECK(!oap_pdfr_open(&d, (const unsigned char *)"hello", 5, err, sizeof(err)) && strstr(err, "Not a PDF"));
     CHECK(!oap_pdfr_open(&d, (const unsigned char *)"%PDF-1.4\n%%EOF\n", 15, err, sizeof(err)));
-    /* a page that draws a filled rectangle: a vector drawing */
+    /* a page that draws a filled triangle: a vector drawing */
     len = snprintf(pdf, sizeof(pdf), "%%PDF-1.4\n");
     off[n++] = len; len += snprintf(pdf + len, sizeof(pdf) - (size_t)len, "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n");
     off[n++] = len; len += snprintf(pdf + len, sizeof(pdf) - (size_t)len, "2 0 obj\n<< /Type /Pages /Count 1 /Kids [3 0 R ] >>\nendobj\n");
