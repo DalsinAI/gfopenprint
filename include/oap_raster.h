@@ -9,6 +9,8 @@
 #include "oap_pdfr.h"
 
 #define OAP_FORMAT_PWG "image/pwg-raster"
+#define OAP_FORMAT_URF "image/urf"               /* Apple raster: the same rows, its own headers */
+#define OAP_URF_HEADER 32
 #define OAP_PWG_HEADER 1796
 
 /* PWG colour spaces (PWG 5102.4 table 2): 8-bit grey and 8-bit sRGB are the two every IPP Everywhere raster
@@ -45,8 +47,12 @@ typedef struct OAPPwgWriter {
     unsigned char *held, *coded;        /* the row waiting for more repeats, and its coding */
     unsigned long held_count, rows_done;
     int bad;
+    int urf;                            /* Apple raster (image/urf) headers instead of PWG's */
 } OAPPwgWriter;
 int oap_pwg_start(OAPPwgWriter *w, OAPPwgWrite write, void *ctx);
+/* An Apple raster stream instead ("UNIRAST", then the number of pages that follow); pages and rows as for PWG. */
+int oap_urf_start(OAPPwgWriter *w, OAPPwgWrite write, void *ctx, unsigned long pages);
+int oap_urf_header(const OAPPwgPage *p, unsigned char out[OAP_URF_HEADER]);
 int oap_pwg_page(OAPPwgWriter *w, const OAPPwgPage *p);
 int oap_pwg_row(OAPPwgWriter *w, const unsigned char *row);
 /* Ends the page: every row given (height of them). 1 when all was written. */
@@ -62,6 +68,8 @@ typedef struct OAPRasterJob {
     int first, last;
     const char *media_name;             /* for the page headers, e.g. "iso_a4_210x297mm" (or NULL) */
     OAPDrawChar draw; void *draw_ctx;   /* the text font: NULL refuses pages with text */
+    int urf;                            /* write Apple raster (image/urf) instead of PWG Raster */
+    unsigned long band_bytes;           /* pixels drawn at a time (a band of rows); 0 for 8 MB */
 } OAPRasterJob;
 /* Pages written, or 0 with words in err. */
 unsigned long oap_pdf_to_pwg(const unsigned char *pdf, size_t len, const OAPRasterJob *job,

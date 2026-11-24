@@ -156,8 +156,10 @@ void oap_testpage_amiga(OAPTestPage *t, const char *printer_name, const char *ur
     oap_testpage_section(t, "Printer");
     oap_testpage_line(t, "Name", "%s", printer_name && printer_name[0] ? printer_name : "not named");
     oap_testpage_line(t, "Address", "%s", uri ? uri : "");
-    oap_testpage_line(t, "Sent as", "%s", route == OAP_PDF_RASTER ? "PWG Raster pages (image/pwg-raster), drawn on this Amiga"
-                                                                  : "PDF (application/pdf)");
+    if ((route & ~OAP_TP_URF) != OAP_PDF_RASTER) oap_testpage_line(t, "Sent as", "PDF (application/pdf)");
+    else if ((route & OAP_TP_URF) || (note && strstr(note, "Apple raster")))
+        oap_testpage_line(t, "Sent as", "Apple raster pages (image/urf), drawn on this Amiga");
+    else oap_testpage_line(t, "Sent as", "PWG Raster pages (image/pwg-raster), drawn on this Amiga");
     if (note && note[0]) oap_testpage_line(t, "It said", "%s", note);
 
     oap_testpage_section(t, "Sent");

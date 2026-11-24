@@ -14,6 +14,7 @@ typedef struct OAPCanvas {
     unsigned long w, h;
     int channels;               /* 1 grey, 3 RGB */
     unsigned long dpi;
+    unsigned long y0;           /* the page row the canvas's first row is (a band of the page); 0 for a whole page */
 } OAPCanvas;
 
 /* Draws one character, Latin-1, of the text font (Courier's place: 0.6 of size_px wide) with its left edge at x

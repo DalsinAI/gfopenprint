@@ -53,6 +53,21 @@ int oap_pwg_header(const OAPPwgPage *p, unsigned char h[OAP_PWG_HEADER])
     return 1;
 }
 
+/* Apple raster's page header: bits a pixel, colour space (0 sGray, 1 sRGB), sides (1 one-sided), quality (4
+ * normal), then width, height and dots an inch; the rows that follow are coded as PWG Raster's. */
+int oap_urf_header(const OAPPwgPage *p, unsigned char h[OAP_URF_HEADER])
+{
+    size_t px = p ? pixel_bytes(p->colorspace) : 0;
+    if (!p || !h || !px || !p->width || !p->height || !p->dpi) return 0;
+    memset(h, 0, OAP_URF_HEADER);
+    h[0] = (unsigned char)(8 * px);
+    h[1] = p->colorspace == OAP_PWG_SRGB ? 1 : 0;
+    h[2] = p->duplex ? (p->tumble ? 2 : 3) : 1;
+    h[3] = 4;
+    be32(h + 12, p->width); be32(h + 16, p->height); be32(h + 20, p->dpi);
+    return 1;
+}
+
 size_t oap_pwg_row_cap(size_t row_bytes)
 {
     return row_bytes * 2 + 2;
@@ -111,10 +126,22 @@ int oap_pwg_start(OAPPwgWriter *w, OAPPwgWrite write, void *ctx)
     return put(w, (const unsigned char *)"RaS2", 4);
 }
 
+int oap_urf_start(OAPPwgWriter *w, OAPPwgWrite write, void *ctx, unsigned long pages)
+{
+    unsigned char h[12];
+    if (!w || !write || !pages) return 0;
+    memset(w, 0, sizeof(*w));
+    w->write = write; w->ctx = ctx; w->urf = 1;
+    memcpy(h, "UNIRAST", 8);
+    be32(h + 8, pages);
+    return put(w, h, sizeof(h));
+}
+
 int oap_pwg_page(OAPPwgWriter *w, const OAPPwgPage *p)
 {
     unsigned char h[OAP_PWG_HEADER];
-    if (!w || w->bad || !oap_pwg_header(p, h)) return 0;
+    size_t hn = w && w->urf ? OAP_URF_HEADER : OAP_PWG_HEADER;
+    if (!w || w->bad || !(w->urf ? oap_urf_header(p, h) : oap_pwg_header(p, h))) return 0;
     free(w->held); free(w->coded);
     w->page = *p;
     w->pixel_bytes = pixel_bytes(p->colorspace);
@@ -123,7 +150,7 @@ int oap_pwg_page(OAPPwgWriter *w, const OAPPwgPage *p)
     w->coded = malloc(oap_pwg_row_cap(w->row_bytes));
     w->held_count = 0; w->rows_done = 0;
     if (!w->held || !w->coded) { w->bad = 1; return 0; }
-    return put(w, h, sizeof(h));
+    return put(w, h, hn);
 }
 
 int oap_pwg_row(OAPPwgWriter *w, const unsigned char *row)
