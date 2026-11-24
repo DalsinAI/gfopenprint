@@ -12,7 +12,7 @@
 #include <string.h>
 
 unsigned long __stack = 65536;
-static const char oap_version[] __attribute__((used)) = "$VER: OAPDiscover 0.4 (9.10.2026)";
+static const char oap_version[] __attribute__((used)) = "$VER: OAPDiscover 0.4.1 (24.11.2026)";
 
 static int query_one(const char *uri, const char *output)
 {

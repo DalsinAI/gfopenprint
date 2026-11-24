@@ -24,6 +24,11 @@ case "$VERSION" in
     *[!0-9A-Za-z.-]*) echo "build-rc.sh: the version may hold letters, digits, '.' and '-' only" >&2; exit 1 ;;
 esac
 [ -f "$ROOT/candidate/RELEASE-NOTES.txt" ] || { echo "build-rc.sh: no candidate/RELEASE-NOTES.txt" >&2; exit 1; }
+command -v lha >/dev/null 2>&1 || { echo "build-rc.sh: no lha on this machine" >&2; exit 1; }   # before the builds
+# the compiler, as build-amiga.sh picks it, for BUILD-INFO.txt
+if [ -n "${AMIGA_CC:-}" ]; then RC_CC=$AMIGA_CC
+elif [ -n "${STOVE:-}" ] && [ -x "$STOVE/prefix/bin/m68k-amigaos-gcc" ]; then RC_CC="$STOVE/prefix/bin/m68k-amigaos-gcc"
+else RC_CC=m68k-amigaos-gcc; fi
 mkdir -p "$OUT"
 BUILD="$ROOT/build/amigaos3"                    # where make_package.py reads the programs
 rm -rf "$BUILD"
@@ -58,11 +63,11 @@ cp "$ROOT/candidate/RELEASE-NOTES.txt" "$P/GFOpenPrint/RELEASE-NOTES.txt"
 {
     echo "GFOpenPrint $VERSION"
     echo "commit: $(git -C "$ROOT" rev-parse HEAD 2>/dev/null || echo unknown)"
-    echo "compiler: $("${STOVE:+$STOVE/prefix/bin/}m68k-amigaos-gcc" --version 2>/dev/null | head -n 1)"
+    echo "compiler: $("$RC_CC" --version 2>/dev/null | head -n 1)"
+    echo "icons: amicradle $(git -C "$AMICRADLE" rev-parse HEAD 2>/dev/null || echo unknown), gfopenup $(git -C "$GFOPENUP" rev-parse HEAD 2>/dev/null || echo unknown)"
     echo "built: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 } > "$P/GFOpenPrint/BUILD-INFO.txt"
 (cd "$P/GFOpenPrint" && find . -type f ! -name SHA256SUMS | LC_ALL=C sort | xargs -d '\n' sha256sum > SHA256SUMS)
-command -v lha >/dev/null 2>&1 || { echo "build-rc.sh: no lha on this machine" >&2; exit 1; }
 rm -f "$OUT/$NAME.lha"
 (cd "$P" && lha -aq "$OUT/$NAME.lha" GFOpenPrint GFOpenPrint.info >/dev/null)
 (cd "$OUT" && sha256sum "$NAME.lha" > "$NAME.lha.sha256")
