@@ -29,6 +29,8 @@ int oap_paper_from_page(int pt);                      /* pt_PaperSize -> OAP_PAP
  * first PTXT chunk's, zero (US Letter) when it is too short or there is none; OAP_PAGE_NONE when the bytes aren't
  * a whole FORM PREF. */
 int oap_printer_prefs_paper(const unsigned char *file, size_t len);
+/* The printer driver printer.prefs names (pt_Driver, e.g. "GFOpenPrint"): 1 when there is one */
+int oap_printer_prefs_driver(const unsigned char *file, size_t len, char *out, size_t cap);
 
 /* A .job's paper= value: OAP_PAPER_ size, or -1 for none (an empty, unknown or unreadable value) */
 int oap_job_paper(const char *value);

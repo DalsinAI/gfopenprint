@@ -115,6 +115,42 @@ long oap_sock_connect(const char *host, unsigned port, unsigned millis, char *no
     return fd;
 }
 
+int oap_net_host_name(char *out, size_t cap)
+{
+    if (!out || cap < 2) return 0;
+    out[0] = 0;
+    if (gethostname((OAP_SOCKSTR)out, (int)cap - 1) != 0) { out[0] = 0; return 0; }
+    out[cap - 1] = 0;
+    return out[0] != 0;
+}
+
+int oap_net_local_ip(const char *host, unsigned port, char *out, size_t cap)
+{
+    struct sockaddr_in to, me;
+    OAP_SOCKOPTLEN len = sizeof(me);
+    long fd;
+    const unsigned char *a;
+    if (!out || cap < 8) return 0;
+    out[0] = 0;
+    memset(&to, 0, sizeof(to));
+    to.sin_family = AF_INET;
+    to.sin_port = htons((unsigned short)(port ? port : 631));
+    if (!host || !resolve(host, &to.sin_addr)) return 0;
+    fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (fd < 0) return 0;
+    /* a UDP connect sends nothing: it only picks the route, and so the address the printer sees */
+    memset(&me, 0, sizeof(me));
+    if (connect(fd, (struct sockaddr *)&to, sizeof(to)) < 0 || getsockname(fd, (struct sockaddr *)&me, &len) < 0 ||
+        me.sin_addr.s_addr == 0) {
+        OAP_CLOSESOCK(fd);
+        return 0;
+    }
+    OAP_CLOSESOCK(fd);
+    a = (const unsigned char *)&me.sin_addr.s_addr;
+    snprintf(out, cap, "%u.%u.%u.%u", a[0], a[1], a[2], a[3]);
+    return 1;
+}
+
 long oap_sock_send(long fd, const void *data, size_t n, unsigned millis)
 {
     long sent;

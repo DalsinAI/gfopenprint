@@ -12,6 +12,8 @@
 #define ID_FORM ID('F', 'O', 'R', 'M')
 #define ID_PREF ID('P', 'R', 'E', 'F')
 #define ID_PTXT ID('P', 'T', 'X', 'T')
+#define PTXT_DRIVER 16            /* pt_Driver[30], the printer driver's name (after pt_Reserved[4]) */
+#define PTXT_DRIVER_SIZE 30
 #define PTXT_PAPERSIZE 50        /* pt_PaperSize's offset in struct PrinterTxtPrefs (a UWORD, big-endian) */
 
 static const char *const labels[OAP_PAPERS] = {
@@ -93,6 +95,34 @@ int oap_printer_prefs_paper(const unsigned char *b, size_t len)
         i += 8 + (size_t)n + (size_t)(n & 1);
     }
     return pt >= 0 ? pt : 0;
+}
+
+int oap_printer_prefs_driver(const unsigned char *b, size_t len, char *out, size_t cap)
+{
+    size_t end, i;
+    unsigned long size;
+    if (!out || !cap) return 0;
+    out[0] = 0;
+    if (!b || len < 12 || be32(b) != ID_FORM || be32(b + 8) != ID_PREF) return 0;
+    size = be32(b + 4);
+    if (size < 4 || size > len - 8) return 0;
+    end = 8 + (size_t)size;
+    for (i = 12; i + 8 <= end;) {
+        unsigned long id = be32(b + i), n = be32(b + i + 4);
+        if (n > end - i - 8) return 0;
+        if (id == ID_PTXT) {
+            const unsigned char *d = b + i + 8;
+            size_t k = 0;
+            if (n < PTXT_DRIVER + 1) return 0;
+            while (k < PTXT_DRIVER_SIZE && PTXT_DRIVER + k < n && d[PTXT_DRIVER + k] && k + 1 < cap) {
+                out[k] = (char)d[PTXT_DRIVER + k]; k++;
+            }
+            out[k] = 0;
+            return k > 0;
+        }
+        i += 8 + (size_t)n + (size_t)(n & 1);
+    }
+    return 0;
 }
 
 int oap_job_paper(const char *value)

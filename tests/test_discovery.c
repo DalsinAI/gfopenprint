@@ -68,6 +68,31 @@ static void raster_checks(OAPDiscovery *d)
     CHECK(oap_discovery_load("build/test-disc-raster.tsv",e,&done,note,sizeof(note)));CHECK(e->printers[0].caps.pdf==OAP_PDF_UNKNOWN&&!oap_pdf_eligible(&e->printers[0]));
     remove("build/test-disc-raster.tsv");free(e);
 }
+static size_t int_attr(unsigned char *p,size_t x,unsigned t,const char *key,unsigned long v){size_t a=strlen(key);p[x++]=t;p16(p+x,a);x+=2;memcpy(p+x,key,a);x+=a;p16(p+x,4);x+=2;p[x]=v>>24;p[x+1]=v>>16;p[x+2]=v>>8;p[x+3]=v;return x+4;}
+/* Get-Job-Attributes: the request, the answer, and what the queue says (24 Nov 2026) */
+static size_t job_answer(unsigned char *p,unsigned long state,unsigned long pages,const char *reason,const char *message)
+{size_t x=8;memset(p,0,1024);p[0]=1;p[1]=1;p[7]=77;p[x++]=1;x=attr(p,x,0x47,"attributes-charset","utf-8");p[x++]=2;x=int_attr(p,x,0x23,"job-state",state);x=int_attr(p,x,0x21,"job-impressions-completed",pages);if(reason)x=attr(p,x,0x44,"job-state-reasons",reason);if(reason)x=attr(p,x,0x44,"","job-printing");if(message)x=attr(p,x,0x41,"job-state-message",message);p[x++]=3;return x;}
+static void job_checks(void)
+{
+    unsigned char p[1024];char words[128];OAPJobState js;size_t n,i;
+    n=oap_ipp_job_request("ipp://192.168.0.6:631/ipp/print",77,14,p,sizeof(p));
+    CHECK(n>0&&p[3]==9&&p[7]==77&&p[n-1]==3);
+    {size_t k;int found=0;for(k=9;k+14<n;k++)if(p[k]==0x21&&!memcmp(p+k+3,"job-id",6)&&p[k+14]==14&&!p[k+13]&&!p[k+12]&&!p[k+11])found=1;CHECK(found);}
+    CHECK(!oap_ipp_job_request("ipp://192.168.0.6:631/ipp/print",77,14,p,40));CHECK(!oap_ipp_job_request(NULL,77,14,p,sizeof(p)));
+    n=job_answer(p,9,1,NULL,NULL);CHECK(oap_ipp_parse_job(p,n,77,&js));CHECK(js.state==9&&js.pages==1&&!js.reasons[0]);
+    CHECK(oap_job_state_words(&js,words,sizeof(words))==1);CHECK(!strcmp(words,"Printed: 1 page"));
+    js.pages=3;oap_job_state_words(&js,words,sizeof(words));CHECK(!strcmp(words,"Printed: 3 pages"));
+    for(i=0;i<n;i++)CHECK(!oap_ipp_parse_job(p,i,77,&js));
+    CHECK(!oap_ipp_parse_job(p,n,78,&js));
+    n=job_answer(p,5,0,"job-incoming",NULL);CHECK(oap_ipp_parse_job(p,n,77,&js));CHECK(js.state==5&&!strcmp(js.reasons,"job-incoming, job-printing"));
+    CHECK(oap_job_state_words(&js,words,sizeof(words))==0);CHECK(!strcmp(words,"Printing"));
+    n=job_answer(p,3,0,NULL,NULL);CHECK(oap_ipp_parse_job(p,n,77,&js));oap_job_state_words(&js,words,sizeof(words));CHECK(!strcmp(words,"Waiting at the printer"));
+    n=job_answer(p,8,0,"document-format-error",NULL);CHECK(oap_ipp_parse_job(p,n,77,&js));CHECK(oap_job_state_words(&js,words,sizeof(words))==1);CHECK(!strcmp(words,"Failed at the printer: document-format-error, job-printing"));
+    n=job_answer(p,7,0,"job-canceled-at-device","Cancelled on the panel");CHECK(oap_ipp_parse_job(p,n,77,&js));oap_job_state_words(&js,words,sizeof(words));CHECK(!strcmp(words,"Cancelled at the printer: Cancelled on the panel"));
+    n=job_answer(p,12,0,NULL,NULL);CHECK(!oap_ipp_parse_job(p,n,77,&js));                     /* no such state */
+    n=job_answer(p,9,1,NULL,NULL);p[2]=4;p[3]=6;CHECK(!oap_ipp_parse_job(p,n,77,&js));CHECK(js.status==0x0406);   /* client-error-not-found */
+    memset(&js,0,sizeof(js));oap_job_state_words(&js,words,sizeof(words));CHECK(!strcmp(words,"Not known"));
+}
 int main(void){unsigned char ipp[1024],http[4096],out[2048],pkt[2048],rd[512];OAPCaps caps;size_t n,hn,bn,i,x;int status;OAPName service,host,base;OAPDiscovery *d=calloc(1,sizeof(*d));
  n=response(ipp,"application/pdf");CHECK(oap_ipp_parse_caps(ipp,n,42,&caps));CHECK(caps.pdf==OAP_PDF_YES);CHECK(!strcmp(caps.model,"HP test"));for(i=0;i<n;i++)CHECK(!oap_ipp_parse_caps(ipp,i,42,&caps));CHECK(!oap_ipp_parse_caps(ipp,n,43,&caps));
  n=response(ipp,"application/pdf-invalid");CHECK(oap_ipp_parse_caps(ipp,n,42,&caps));CHECK(caps.pdf==OAP_PDF_NO);
@@ -90,4 +115,4 @@ int main(void){unsigned char ipp[1024],http[4096],out[2048],pkt[2048],rd[512];OA
  /* Print-Job acknowledgements must carry a valid integer job-id. */
  memset(ipp,0,32);ipp[0]=1;ipp[1]=1;ipp[7]=42;ipp[8]=2;ipp[9]=0x21;p16(ipp+10,6);memcpy(ipp+12,"job-id",6);p16(ipp+18,4);ipp[23]=7;ipp[24]=3;
  CHECK(oap_ipp_parse_caps(ipp,25,42,&caps));CHECK(caps.job_id==7);CHECK(!oap_ipp_parse_caps(ipp,24,42,&caps));
- raster_checks(d);free(d);printf("PASS: %u discovery, MIME gating, DNS bounds, complete HTTP and IPP checks\n",checks);return 0;}
+ job_checks();raster_checks(d);free(d);printf("PASS: %u discovery, MIME gating, DNS bounds, complete HTTP and IPP checks\n",checks);return 0;}

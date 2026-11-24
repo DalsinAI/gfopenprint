@@ -36,6 +36,13 @@ int oap_dns_packet(OAPDiscovery *, const unsigned char *, size_t);
 void oap_discovery_resolve(OAPDiscovery *);
 size_t oap_ipp_query_request(const char *, uint32_t, unsigned char *, size_t);
 int oap_ipp_parse_caps(const unsigned char *, size_t, uint32_t, OAPCaps *);
+/* A job at the printer (Get-Job-Attributes): state 3 pending ... 5 processing, 6 stopped, 7 canceled, 8 aborted,
+ * 9 completed (RFC 8011 5.3.7); pages: impressions done. */
+typedef struct OAPJobState { int state; unsigned status; unsigned long pages; char reasons[192], message[128]; } OAPJobState;
+size_t oap_ipp_job_request(const char *uri, uint32_t id, uint32_t job, unsigned char *out, size_t cap);
+int oap_ipp_parse_job(const unsigned char *, size_t, uint32_t id, OAPJobState *);
+/* The state in words ("Printed: 1 page", "Failed at the printer: ..."); 1 once the job has ended (7-9). */
+int oap_job_state_words(const OAPJobState *, char *out, size_t cap);
 int oap_http_response(const unsigned char *, size_t, int, unsigned char *, size_t, size_t *, int *);
 int oap_http_header(const unsigned char *, size_t, const char *, char *, size_t);
 int oap_pdf_eligible(const OAPDiscovered *);

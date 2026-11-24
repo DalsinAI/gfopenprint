@@ -5,9 +5,9 @@ CFLAGS ?= -O2 -Wall -Wextra -Werror -std=c11
 CPPFLAGS += -Iinclude
 CORE = src/core/job.c src/core/ipp.c src/core/pdf_demo.c
 
-.PHONY: all test clean test-core test-discovery test-submit test-auth test-viewer test-driver test-discovery-sendfail test-discovery-bind test-build-out test-build-rc test-ipps test-paper test-paper-page test-rawps test-pwg test-pdfr test-pdf2pwg
+.PHONY: all test clean test-core test-discovery test-submit test-auth test-viewer test-driver test-discovery-sendfail test-discovery-bind test-build-out test-build-rc test-ipps test-paper test-paper-page test-rawps test-pwg test-pdfr test-pdf2pwg test-testpage
 all: test
-test: test-core test-discovery test-submit test-auth test-viewer test-driver test-discovery-sendfail test-discovery-bind test-build-out test-build-rc test-paper test-paper-page test-pwg test-pdfr test-pdf2pwg
+test: test-core test-discovery test-submit test-auth test-viewer test-driver test-discovery-sendfail test-discovery-bind test-build-out test-build-rc test-paper test-paper-page test-pwg test-pdfr test-pdf2pwg test-testpage
 
 build/test_core: tests/test_core.c $(CORE) include/oap.h
 	mkdir -p build
@@ -69,6 +69,14 @@ build/test_pdf2pwg: tests/test_pdf2pwg.c src/core/pdf2pwg.c src/core/pwg.c src/c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ tests/test_pdf2pwg.c src/core/pdf2pwg.c src/core/pwg.c src/core/pdfr.c src/core/inflate.c
 test-pdf2pwg: build/test_pdf2pwg test-driver
 	./build/test_pdf2pwg
+
+# The GFOS test page: drawn by GFOpenPrint's own reader in colour and grey, versions from files, the sender's address
+TESTPAGE_NET = src/net/conn.c src/net/mdns.c src/tls/tls.c src/tls/trust.c src/discovery/protocol.c src/discovery/http.c
+build/test_testpage: tests/test_testpage.c src/core/testpage.c src/core/pdfr.c src/core/inflate.c $(TESTPAGE_NET) include/oap_testpage.h
+	mkdir -p build
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D_DEFAULT_SOURCE -o $@ tests/test_testpage.c src/core/testpage.c src/core/pdfr.c src/core/inflate.c $(TESTPAGE_NET)
+test-testpage: build/test_testpage
+	./build/test_testpage
 
 test-discovery-sendfail:
 	sh tests/test_discovery_sendfail.sh

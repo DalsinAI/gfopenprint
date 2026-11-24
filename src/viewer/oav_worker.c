@@ -3,6 +3,7 @@
 #include "oav_core.h"
 #include "oav_jobs.h"
 #include "oap.h"
+#include "oap_net.h"
 #include "oap_queue.h"
 #include "oap_str.h"
 #include <exec/types.h>
@@ -66,6 +67,25 @@ static int print_progress(void *opaque,const char *stage,unsigned long sent,unsi
  if(changed)oav_update_queue_state(p->source,stage,p->uri,text);
  oap_copy(p->stage,sizeof(p->stage),stage);p->last_bytes=sent;return 1;
 }
+/* After the printer took the job: ask it how the job goes, every 3 s for up to 10 minutes, and keep the queue's
+ * line to what it says (printing, printed and how many pages, or why it failed). The Print window is already done. */
+static void follow_job(const char *source,const char *uri,unsigned long job,Pixels *cancel)
+{
+ OAPJobState js;char words[200],last[200],note[200];int i,misses=0;
+ if(!job||!oap_net_start())return;
+ last[0]=0;
+ for(i=0;i<200&&!is_cancelled(cancel);i++){
+  Delay(i?150:50);
+  if(!oap_query_job(uri,job,&js,note,sizeof(note))){if(++misses>=5)break;continue;}
+  misses=0;
+  {int ended=oap_job_state_words(&js,words,sizeof(words));
+   const char *state=js.state==9?"printed":ended?"printer-failed":js.state==5?"printing":"submitted";
+   if(strcmp(words,last)){oav_update_queue_state(source,state,uri,words);oap_copy(last,sizeof(last),words);}
+   if(ended)break;}
+ }
+ oap_net_stop();
+}
+
 static int copyfile(const char *from,const char *to)
 {
  FILE *a=fopen(from,"rb"),*b;static char buf[8192];size_t n;unsigned long total=0;int ok=1;
@@ -101,6 +121,7 @@ static int worker_main(int argc,char **argv)
   rc=oap_ipp_submit_doc_ex(r.source,&o,msg,sizeof(msg),print_progress,&progress);   /* a PDF, or a program's PostScript */
   state=rc==OAP_SEND_ACCEPTED?"submitted":rc==OAP_SEND_UNCERTAIN?"uncertain":rc==OAP_SEND_CANCELLED?"cancelled":"error";
   oav_update_queue_state(r.source,state,r.uri,msg);result(argv[1],state,msg);
+  if(rc==OAP_SEND_ACCEPTED)follow_job(r.source,r.uri,oap_ipp_last_job_id(),&progress.cancel);
   return rc==OAP_SEND_ACCEPTED?0:rc==OAP_SEND_CANCELLED?5:20;
  }
  snprintf(snapshot,sizeof(snapshot),"%s.source",argv[1]);
