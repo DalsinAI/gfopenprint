@@ -16,6 +16,8 @@ python3 "$ROOT/tools/make_oap_app_icon.py" "$OUT/GFOpenPrintTool.info"
 APP="-m68040 -specs=$ROOT/specs/m68k-soft-m68040.specs -fno-common -O2 -fno-delete-null-pointer-checks -Wall -Wextra -Werror -noixemul"
 # What printers are reached by: the connection, IPP client and Print-Job.
 NET="$ROOT/src/net/conn.c $ROOT/src/net/ipp_client.c $ROOT/src/net/ipp_submit.c $ROOT/src/net/http_auth.c $ROOT/src/net/mdns.c"
+# Raster pages for printers without PDF (GFO-254): GFOpenPrint's own PDFs drawn, text in diskfont's font.
+RASTER="$ROOT/src/core/pdf2pwg.c $ROOT/src/core/pwg.c $ROOT/src/core/pdfr.c $ROOT/src/core/inflate.c $ROOT/src/amiga/raster_font.c"
 . "$ROOT/scripts/tls-flags.sh"
 # The Print requester: it hands sending to C:OAVWorker, so it has no network
 # code (tls.c without a backend: only the words for a certificate's state);
@@ -55,12 +57,12 @@ wc -c "$OUT/oapimagetest"
   -o "$OUT/OAVWorker" \
   "$ROOT/src/viewer/oav_core.c" "$ROOT/src/viewer/oav_jobs.c" "$ROOT/src/viewer/oav_worker.c" "$ROOT/src/amiga/oap_stack.c" \
   "$ROOT/src/discovery/protocol.c" "$ROOT/src/discovery/http.c" \
-  "$ROOT/src/core/job.c" "$ROOT/src/core/ipp.c" $NET $TLS_SOURCES -lamiga
+  "$ROOT/src/core/job.c" "$ROOT/src/core/ipp.c" $NET $RASTER $TLS_SOURCES -lamiga
 file "$OUT/OAVWorker"
 
 # The network, TLS and IPP code from the command line, for the lab: query, print, trust.
 "$CC" $APP -I"$ROOT/include" $TLS_FLAGS -o "$OUT/OAPIPPSTest" "$ROOT/tests/host/ipps_tool.c" "$ROOT/src/amiga/oap_stack.c" \
-  "$ROOT/src/discovery/protocol.c" "$ROOT/src/discovery/http.c" "$ROOT/src/core/job.c" "$ROOT/src/core/ipp.c" $NET $TLS_SOURCES -lamiga
+  "$ROOT/src/discovery/protocol.c" "$ROOT/src/discovery/http.c" "$ROOT/src/core/job.c" "$ROOT/src/core/ipp.c" $NET $RASTER $TLS_SOURCES -lamiga
 file "$OUT/OAPIPPSTest"
 
 python3 "$ROOT/tools/make_oap_icon.py" "$OUT/GFOpenPrint.info"

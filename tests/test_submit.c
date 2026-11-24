@@ -3,10 +3,11 @@
 #define _GNU_SOURCE                    /* memmem */
 #include "oap.h"
 #include "oap_net.h"
+#include "oap_raster.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-static int checks, mode, writes, opened, closed, cancel_mode, queried, ps_caps = OAP_PDF_YES;
+static int checks, mode, writes, opened, closed, cancel_mode, queried, ps_caps = OAP_PDF_YES, raster_caps, have_font = 1;
 static unsigned char sent[65536];      /* everything written to the printer, the request line's stand-in too */
 static size_t sent_n;
 #define CHECK(x) do {checks++;if(!(x)){fprintf(stderr,"FAIL line %d: %s\n",__LINE__,#x);exit(1);}}while(0)
@@ -26,7 +27,8 @@ int oap_http_post(OAPConn *c,const OAPUri *u,unsigned long len,const char *auth)
 int oap_ipp_login(OAPConn *c,const OAPUri *u,const OAPHttpReply *r,unsigned k,char *a,size_t cap,char *note,size_t nc){
  (void)c;(void)k;CHECK(r->status==401);if(!u->secure){snprintf(note,nc,"passwords only over ipps://");return 0;}snprintf(a,cap,"Authorization: Basic eA==\r\n");return 1;}
 int oap_query_pdf(const char *uri,OAPCaps *c,OAPTlsInfo *t,char *note,size_t n){
- queried++;memset(c,0,sizeof(*c));c->pdf=mode==1?OAP_PDF_NO:OAP_PDF_YES;c->ps=ps_caps;c->accepting=1;c->color=1;
+ queried++;memset(c,0,sizeof(*c));c->pdf=mode==1||raster_caps?OAP_PDF_NO:OAP_PDF_YES;c->ps=ps_caps;c->accepting=1;c->color=1;
+ if(raster_caps){c->pwg=OAP_PDF_YES;c->pwg_dpi=100;c->pwg_types=OAP_PWG_GREY8;c->color=0;c->duplex=1;}
  if(t){memset(t,0,sizeof(*t));t->verdict=!strncmp(uri,"ipps://",7)?(mode==7?OAP_CERT_ASK:mode==8?OAP_CERT_NOTLS:OAP_CERT_TRUSTED):OAP_CERT_NONE;}
  snprintf(note,n,"mock query");return mode!=8;
 }
@@ -43,6 +45,7 @@ static int progress(void *ctx,const char *stage,unsigned long sent,unsigned long
  (void)ctx;CHECK(sent<=total);
  if(cancel_mode==1&&!strcmp(stage,"preparing"))return 0;
  if(cancel_mode==2&&!strcmp(stage,"uploading")&&sent>=8192)return 0;
+ if(cancel_mode==3&&!strcmp(stage,"rendering"))return 0;
  return 1;
 }
 static void reset(int m,int cancel){mode=m;cancel_mode=cancel;writes=opened=closed=queried=receives=authorized=0;sent_n=0;}
@@ -83,6 +86,45 @@ static void raw_postscript(void){
  CHECK(rc==OAP_SEND_ACCEPTED&&sent_n==pdfn&&!memcmp(sent,pdfsent,pdfn)&&memmem(sent,sent_n,"application/pdf",15)!=NULL);
  remove("build/submit-test.ps");remove("build/submit-test.pcl");remove("build/submit-test-untitled.ps");remove("build/submit-test.pdf");
 }
+/* the text font for raster pages: a dot where each character starts */
+static void dot(void *ctx,OAPCanvas *c,long x,long y,unsigned long size,unsigned char ch){(void)ctx;(void)size;(void)ch;
+ if(x>=0&&y>=0&&(unsigned long)x<c->w&&(unsigned long)y<c->h)c->pix[((size_t)y*c->w+(size_t)x)*(size_t)c->channels]=0;}
+static int fonts_open;
+OAPDrawChar oap_raster_font(void **ctx){*ctx=NULL;if(!have_font)return NULL;fonts_open++;return dot;}
+static int fonts_closed;
+void oap_raster_font_close(void){fonts_closed++;}
+static size_t count(const char *what){size_t k=0,n=strlen(what);const unsigned char *p=sent,*e=sent+sent_n;while((p=memmem(p,(size_t)(e-p),what,n))!=NULL){k++;p+=n;}return k;}
+/* GFO-254: a printer without PDF that takes PWG Raster gets GFOpenPrint's own PDF as raster pages */
+static void raster_jobs(void){
+ OAPJobOptions o;char status[256];int rc;FILE *f;
+ oap_job_defaults(&o);strcpy(o.printer_uri,"ipp://192.0.2.167:631/ipp/print");strcpy(o.job_name,"Lines");
+ o.copies=2;o.page_start=2;o.page_end=3;o.orientation=OAP_LANDSCAPE;
+ raster_caps=1;have_font=1;ps_caps=OAP_PDF_NO;
+ reset(0,0);rc=oap_ipp_submit_pdf_ex("build/driver-300-lines.pdf",&o,status,sizeof(status),progress,NULL);
+ CHECK(rc==OAP_SEND_ACCEPTED||(printf("%s\n",status),0));CHECK(fonts_open==1&&fonts_closed==1);
+ CHECK(sent_n<sizeof(sent));
+ CHECK(count("image/pwg-raster")==1&&count("RaS2")==1&&count("PwgRaster")==2);     /* pages 2 and 3 only */
+ CHECK(!count("orientation-requested")&&!count("page-ranges")&&!count("application/pdf"));
+ CHECK(count("copies")==1&&count("iso_a4_210x297mm")==3&&count("monochrome")==1);  /* media: the job's and each page's */
+ CHECK((f=fopen("build/oap-raster.pwg","rb"))==NULL);if(f)fclose(f);                  /* the pages don't stay */
+ /* not yet: two-sided; refused before anything is sent */
+ o.duplex=OAP_DUPLEX_LONG;reset(0,0);rc=oap_ipp_submit_pdf_ex("build/driver-300-lines.pdf",&o,status,sizeof(status),progress,NULL);
+ CHECK(rc==OAP_SEND_ERROR&&writes==0&&strstr(status,"two-sided")!=NULL);o.duplex=OAP_SIMPLEX;
+ /* text and no font: refused, never printed blank */
+ have_font=0;reset(0,0);rc=oap_ipp_submit_pdf_ex("build/driver-300-lines.pdf",&o,status,sizeof(status),progress,NULL);
+ CHECK(rc==OAP_SEND_ERROR&&writes==0&&strstr(status,"No font")!=NULL);have_font=1;
+ /* a PDF GFOpenPrint didn't write: refused in words */
+ reset(0,0);rc=oap_ipp_submit_pdf_ex("build/submit-test-fixture.dat",&o,status,sizeof(status),progress,NULL);
+ CHECK(rc==OAP_SEND_ERROR&&writes==0&&!strncmp(status,"Not sent: ",10));
+ /* cancelled while the pages are made: nothing sent */
+ cancel_mode=3;reset(0,3);rc=oap_ipp_submit_pdf_ex("build/driver-300-lines.pdf",&o,status,sizeof(status),progress,NULL);
+ CHECK(rc==OAP_SEND_CANCELLED&&writes==0);
+ /* a raster printer without PostScript still isn't sent PostScript */
+ f=fopen("build/submit-test-raster.ps","wb");CHECK(f!=NULL);fputs("%!PS\nshowpage\n",f);fclose(f);
+ reset(0,0);rc=oap_ipp_submit_doc_ex("build/submit-test-raster.ps",&o,status,sizeof(status),progress,NULL);
+ CHECK(rc==OAP_SEND_ERROR&&writes==0&&strstr(status,"PostScript")!=NULL);remove("build/submit-test-raster.ps");
+ raster_caps=0;ps_caps=OAP_PDF_YES;
+}
 int main(void){
  OAPJobOptions o;char status[256];FILE *f;int rc,i;
  oap_job_defaults(&o);strcpy(o.printer_uri,"ipp://192.0.2.123:631/ipp/print");
@@ -105,5 +147,6 @@ int main(void){
  reset(7,0);rc=oap_ipp_submit_pdf_ex("build/submit-test-fixture.dat",&o,status,sizeof(status),progress,NULL);CHECK(rc==OAP_SEND_ERROR&&writes==0&&opened==0&&strstr(status,"isn't trusted")!=NULL);
  reset(8,0);rc=oap_ipp_submit_pdf_ex("build/submit-test-fixture.dat",&o,status,sizeof(status),progress,NULL);CHECK(rc==OAP_SEND_ERROR&&writes==0&&strstr(status,"gfopentls.library")!=NULL);
  raw_postscript();
+ raster_jobs();
  remove("build/submit-test-fixture.dat");printf("PASS: %d submission, cancellation, uncertainty and cleanup checks; no network used\n",checks);return 0;
 }

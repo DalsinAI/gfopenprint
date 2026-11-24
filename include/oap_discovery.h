@@ -13,11 +13,17 @@
  * the old place when the new one has none. */
 #define OAP_DISC_SELECTION_OLD "ENV:OpenAmigaPrint/PrinterURI"
 #define OAP_DISC_SAVED_OLD "ENVARC:OpenAmigaPrint/PrinterURI"
-enum { OAP_PDF_UNKNOWN=0, OAP_PDF_YES=1, OAP_PDF_NO=2 };
+/* How a printer takes documents. _RASTER: no PDF, but PWG Raster (image/pwg-raster), which GFOpenPrint makes from
+ * its own PDFs (oap_pdfr.h); only ever a route, never a caps.pdf value. */
+enum { OAP_PDF_UNKNOWN=0, OAP_PDF_YES=1, OAP_PDF_NO=2, OAP_PDF_RASTER=3 };
+#define OAP_ROUTE_OK(r) ((r) == OAP_PDF_YES || (r) == OAP_PDF_RASTER)
+enum { OAP_PWG_GREY8=1, OAP_PWG_RGB8=2 };
 typedef struct OAPName { unsigned char wire[256]; size_t len; } OAPName;
 /* pdf and ps: OAP_PDF_YES when document-format-supported lists application/pdf (application/postscript), _NO when
  * it lists others but not that one, _UNKNOWN when the printer didn't say. */
-typedef struct OAPCaps { int pdf, ps, accepting, state, color, duplex; unsigned status; uint32_t job_id; char name[128], model[128], location[128], reasons[256]; } OAPCaps;
+/* pwg: as pdf, for image/pwg-raster, and _YES only with a sgray_8 or srgb_8 type (pwg_types, OAP_PWG_*) and a square
+ * resolution in dpi (pwg_dpi: 300 when offered, else the nearest). */
+typedef struct OAPCaps { int pdf, ps, accepting, state, color, duplex, pwg, pwg_types; unsigned long pwg_dpi; unsigned status; uint32_t job_id; char name[128], model[128], location[128], reasons[256]; } OAPCaps;
 typedef struct OAPDiscovered { OAPName service, target; char label[128], host[256], ip[16], path[256], uri[640], note[256]; unsigned port; int secure, have_srv, have_txt, alive; OAPCaps caps;
     int cert;                       /* ipps://: OAP_CERT_* (oap_tls.h), what the check found */
     char fingerprint[96], cert_subject[128];
@@ -33,6 +39,9 @@ int oap_ipp_parse_caps(const unsigned char *, size_t, uint32_t, OAPCaps *);
 int oap_http_response(const unsigned char *, size_t, int, unsigned char *, size_t, size_t *, int *);
 int oap_http_header(const unsigned char *, size_t, const char *, char *, size_t);
 int oap_pdf_eligible(const OAPDiscovered *);
+/* OAP_PDF_YES when it takes PDF, _RASTER when only PWG Raster, else caps->pdf (_NO or _UNKNOWN). */
+static inline int oap_caps_route(const OAPCaps *c)
+{ return c->pdf == OAP_PDF_YES ? OAP_PDF_YES : c->pwg == OAP_PDF_YES ? OAP_PDF_RASTER : c->pdf; }
 /* A printer that offers both ipp:// and ipps:// is shown once: by ipps://
  * when this Amiga has TLS (`secure_ok`), else by ipp://. */
 void oap_discovery_prefer(OAPDiscovery *, int secure_ok);

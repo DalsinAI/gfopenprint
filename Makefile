@@ -5,9 +5,9 @@ CFLAGS ?= -O2 -Wall -Wextra -Werror -std=c11
 CPPFLAGS += -Iinclude
 CORE = src/core/job.c src/core/ipp.c src/core/pdf_demo.c
 
-.PHONY: all test clean test-core test-discovery test-submit test-auth test-viewer test-driver test-discovery-sendfail test-discovery-bind test-build-out test-build-rc test-ipps test-paper test-paper-page test-rawps
+.PHONY: all test clean test-core test-discovery test-submit test-auth test-viewer test-driver test-discovery-sendfail test-discovery-bind test-build-out test-build-rc test-ipps test-paper test-paper-page test-rawps test-pwg test-pdfr test-pdf2pwg
 all: test
-test: test-core test-discovery test-submit test-auth test-viewer test-driver test-discovery-sendfail test-discovery-bind test-build-out test-build-rc test-paper test-paper-page
+test: test-core test-discovery test-submit test-auth test-viewer test-driver test-discovery-sendfail test-discovery-bind test-build-out test-build-rc test-paper test-paper-page test-pwg test-pdfr test-pdf2pwg
 
 build/test_core: tests/test_core.c $(CORE) include/oap.h
 	mkdir -p build
@@ -21,10 +21,12 @@ build/test_discovery: tests/test_discovery.c src/discovery/protocol.c src/discov
 test-discovery: build/test_discovery
 	./build/test_discovery
 
-build/test_submit: tests/test_submit.c src/net/ipp_submit.c src/core/ipp.c src/core/job.c src/discovery/protocol.c src/tls/tls.c src/tls/trust.c include/oap.h include/oap_net.h include/oap_tls.h
+SUBMIT_RASTER = src/core/pdf2pwg.c src/core/pwg.c src/core/pdfr.c src/core/inflate.c
+build/test_submit: tests/test_submit.c src/net/ipp_submit.c src/core/ipp.c src/core/job.c src/discovery/protocol.c src/tls/tls.c src/tls/trust.c include/oap.h include/oap_net.h include/oap_tls.h $(SUBMIT_RASTER) include/oap_raster.h
 	mkdir -p build
-	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ tests/test_submit.c src/net/ipp_submit.c src/core/ipp.c src/core/job.c src/discovery/protocol.c src/tls/tls.c src/tls/trust.c
-test-submit: build/test_submit
+	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ tests/test_submit.c src/net/ipp_submit.c src/core/ipp.c src/core/job.c src/discovery/protocol.c src/tls/tls.c src/tls/trust.c $(SUBMIT_RASTER)
+# the raster jobs send build/driver-300-lines.pdf, which test-driver writes
+test-submit: build/test_submit test-driver
 	./build/test_submit
 
 build/test_auth: tests/test_auth.c src/net/http_auth.c src/tls/tls.c src/tls/trust.c src/discovery/protocol.c src/discovery/http.c include/oap_net.h include/oap_tls.h
@@ -45,6 +47,28 @@ build/test_driver: tests/test_driver.c src/driver/openprint_driver.c $(wildcard 
 	$(CC) -Itests/host/driver $(CFLAGS) -o $@ tests/test_driver.c src/driver/openprint_driver.c
 test-driver: build/test_driver
 	./build/test_driver
+
+# PWG Raster pages (image/pwg-raster) for printers that take no PDF: header offsets and rows read back
+build/test_pwg: tests/test_pwg.c src/core/pwg.c include/oap_raster.h
+	mkdir -p build
+	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ tests/test_pwg.c src/core/pwg.c
+test-pwg: build/test_pwg
+	./build/test_pwg
+
+# GFOpenPrint's own PDFs (the driver's, GFOpenView's) as page pixels for raster printers; reads the PDFs
+# test-driver writes to build/, and makes GFOpenView PDFs with oav_core.c
+build/test_pdfr: tests/test_pdfr.c src/core/pdfr.c src/core/inflate.c src/core/pdf_demo.c src/viewer/oav_core.c include/oap_pdfr.h include/oap_inflate.h
+	mkdir -p build
+	$(CC) $(CPPFLAGS) $(CFLAGS) -D_GNU_SOURCE -o $@ tests/test_pdfr.c src/core/pdfr.c src/core/inflate.c src/core/pdf_demo.c src/viewer/oav_core.c
+test-pdfr: build/test_pdfr test-driver
+	./build/test_pdfr
+
+# Those pages as PWG Raster: read back with the test's own decoder, landscape turned upright, page ranges
+build/test_pdf2pwg: tests/test_pdf2pwg.c src/core/pdf2pwg.c src/core/pwg.c src/core/pdfr.c src/core/inflate.c include/oap_raster.h include/oap_pdfr.h
+	mkdir -p build
+	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ tests/test_pdf2pwg.c src/core/pdf2pwg.c src/core/pwg.c src/core/pdfr.c src/core/inflate.c
+test-pdf2pwg: build/test_pdf2pwg test-driver
+	./build/test_pdf2pwg
 
 test-discovery-sendfail:
 	sh tests/test_discovery_sendfail.sh

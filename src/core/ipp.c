@@ -86,11 +86,12 @@ int oap_ipp_build_prefix(const OAPJobOptions *o,unsigned char *b,size_t c,size_t
 }
 int oap_ipp_build_prefix_doc(const OAPJobOptions *o,const char *format,unsigned char *b,size_t c,size_t *out)
 {
-    size_t p=0,nl; const char *media,*sides,*colour; unsigned orient; int ps;
+    size_t p=0,nl; const char *media,*sides,*colour; unsigned orient; int ps,pwg;
     unsigned char range[8],name[256];
     if(!o||!b||!out||!format)return 0;
     ps=!strcmp(format,OAP_FORMAT_PS);
-    if(!ps&&strcmp(format,OAP_FORMAT_PDF))return 0;
+    pwg=!strcmp(format,"image/pwg-raster");
+    if(!ps&&!pwg&&strcmp(format,OAP_FORMAT_PDF))return 0;
     nl=utf8_name(o->job_name,name,sizeof(name));
     media=oap_ipp_media(o->paper);
     sides=o->duplex==OAP_DUPLEX_LONG?"two-sided-long-edge":o->duplex==OAP_DUPLEX_SHORT?"two-sided-short-edge":"one-sided";
@@ -108,10 +109,11 @@ int oap_ipp_build_prefix_doc(const OAPJobOptions *o,const char *format,unsigned 
     /* PostScript: its own setpagedevice says the paper, the sides and the pages; the printer's defaults do the rest */
     if(!ps){
         if(!attr_s(b,c,&p,0x44,"media",media))return 0;
-        if(!attr_i(b,c,&p,0x23,"orientation-requested",orient))return 0;
+        /* PWG Raster pages are made upright and only of the pages asked for: no orientation, no page-ranges */
+        if(!pwg&&!attr_i(b,c,&p,0x23,"orientation-requested",orient))return 0;
         if(!attr_s(b,c,&p,0x44,"print-color-mode",colour))return 0;
         if(!attr_s(b,c,&p,0x44,"sides",sides))return 0;
-        if(o->page_start>0 && o->page_end>=o->page_start){
+        if(!pwg && o->page_start>0 && o->page_end>=o->page_start){
             unsigned long a=o->page_start,z=o->page_end;
             range[0]=a>>24;range[1]=a>>16;range[2]=a>>8;range[3]=a;
             range[4]=z>>24;range[5]=z>>16;range[6]=z>>8;range[7]=z;

@@ -18,6 +18,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+struct GfxBase *GfxBase;      /* raster pages' text font (src/amiga/raster_font.c) opens graphics.library into it */
+
 #ifdef __amigaos__
 unsigned long __stack = 65536;
 static const char oap_version[] __attribute__((used)) = "$VER: OAPIPPSTest 0.1 (9.10.2026)";

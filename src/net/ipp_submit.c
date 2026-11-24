@@ -2,6 +2,7 @@
 /* IPP Print-Job of a PDF, or of a program's own PostScript, to an ipp:// or ipps:// printer (include/oap.h). */
 #include "oap.h"
 #include "oap_net.h"
+#include "oap_raster.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -43,6 +44,64 @@ static void untrusted(const OAPTlsInfo *tls, char *status, size_t cap)
         snprintf(status, cap, "Not sent: %s", oap_cert_words(tls->verdict));
 }
 
+/* Where a raster job's pages wait to be sent: in T: on the Amiga (RAM:, usually) */
+#ifndef OAP_RASTER_TEMP
+#ifdef __amigaos__
+#define OAP_RASTER_TEMP "T:GFOpenPrint-raster.pwg"
+#else
+#define OAP_RASTER_TEMP "build/oap-raster.pwg"
+#endif
+#endif
+
+static int to_file(void *ctx, const unsigned char *bytes, size_t n)
+{
+    return fwrite(bytes, 1, n, (FILE *)ctx) == n;
+}
+
+/* The PDF in f as PWG Raster pages in OAP_RASTER_TEMP, for a printer that takes no PDF: f is then that file and
+ * *flen its size. 0 with words in status. */
+static int make_raster(SendWorkspace *s, FILE **f, long *flen, char *status, size_t cap)
+{
+    unsigned char *pdf = malloc((size_t)*flen);
+    FILE *out = NULL;
+    OAPRasterJob j;
+    char err[200];
+    unsigned long pages = 0;
+    int ok = 0;
+    if (!pdf) { snprintf(status, cap, "Not enough memory to make raster pages"); return 0; }
+    if (fseek(*f, 0, SEEK_SET) || fread(pdf, 1, (size_t)*flen, *f) != (size_t)*flen) {
+        snprintf(status, cap, "Cannot read the PDF"); goto out;
+    }
+    memset(&j, 0, sizeof(j));
+    j.dpi = s->capabilities.pwg_dpi;
+    j.rgb = s->effective.color != OAP_MONO && (s->capabilities.pwg_types & OAP_PWG_RGB8)
+            ? 1 : !(s->capabilities.pwg_types & OAP_PWG_GREY8);
+    j.first = s->effective.page_start > 0 && s->effective.page_end >= s->effective.page_start ? s->effective.page_start : 0;
+    j.last = j.first ? s->effective.page_end : 0;
+    j.media_name = oap_ipp_media(s->effective.paper);
+    j.draw = oap_raster_font(&j.draw_ctx);
+    out = fopen(OAP_RASTER_TEMP, "wb");
+    if (!out) { snprintf(status, cap, "Cannot write raster pages to %s", OAP_RASTER_TEMP); goto out; }
+    err[0] = 0;
+    pages = oap_pdf_to_pwg(pdf, (size_t)*flen, &j, to_file, out, err, sizeof(err));
+    oap_raster_font_close();
+    if (fclose(out)) pages = 0;
+    out = NULL;
+    if (!pages) {
+        snprintf(status, cap, "Not sent: %s", err[0] ? err : "the raster pages could not be made"); goto out;
+    }
+    fclose(*f);
+    *f = fopen(OAP_RASTER_TEMP, "rb");
+    if (!*f || fseek(*f, 0, SEEK_END) || (*flen = ftell(*f)) < 4 || fseek(*f, 0, SEEK_SET)) {
+        snprintf(status, cap, "Cannot read the raster pages back"); goto out;
+    }
+    ok = 1;
+out:
+    if (out) fclose(out);
+    free(pdf);
+    return ok;
+}
+
 /* want: the one format the caller sends (OAP_FORMAT_PDF), or NULL for a PDF or PostScript, by its first bytes. */
 static int submit(const char *pdf, const char *want, const OAPJobOptions *o,
                   char *status, size_t cap,
@@ -56,7 +115,7 @@ static int submit(const char *pdf, const char *want, const OAPJobOptions *o,
     unsigned long uploaded = 0, mark;
     time_t moved;
     OAPConn *conn = NULL;
-    int result = OAP_SEND_ERROR, attempted = 0, tries, ps;
+    int result = OAP_SEND_ERROR, attempted = 0, tries, ps, raster = 0;
     const char *format, *kind;
     if (!pdf || !o || !status || !cap) return OAP_SEND_ERROR;
     status[0] = 0;
@@ -106,11 +165,23 @@ static int submit(const char *pdf, const char *want, const OAPJobOptions *o,
                  : "Not sent: the printer didn't say which formats it takes, so PostScript isn't confirmed");
         goto done;
     }
-    if (!ps && s->capabilities.pdf != OAP_PDF_YES) { snprintf(status, cap, "PDF not confirmed: %.180s", s->note); goto done; }
+    /* no PDF, but PWG Raster: GFOpenPrint draws its own PDF's pages and sends those */
+    raster = !ps && s->capabilities.pdf != OAP_PDF_YES && s->capabilities.pwg == OAP_PDF_YES;
+    if (!ps && !raster && s->capabilities.pdf != OAP_PDF_YES) { snprintf(status, cap, "PDF not confirmed: %.180s", s->note); goto done; }
     if (s->capabilities.accepting == 0) { snprintf(status, cap, "Printer is not accepting jobs"); goto done; }
     if (!s->capabilities.color) s->effective.color = OAP_MONO;
     if (!ps && s->effective.duplex != OAP_SIMPLEX && !s->capabilities.duplex) {
         snprintf(status, cap, "Printer has not confirmed duplex; choose one-sided"); goto done;
+    }
+    if (raster) {
+        if (s->effective.duplex != OAP_SIMPLEX) {
+            snprintf(status, cap, "Not sent: two-sided printing on a printer without PDF isn't done yet; choose one-sided");
+            goto done;
+        }
+        if (!progress(notify, ctx, "rendering", 0, (unsigned long)flen)) goto cancelled;
+        if (!make_raster(s, &f, &flen, status, cap)) goto done;
+        format = OAP_FORMAT_PWG;
+        kind = "raster pages";
     }
     if (!oap_ipp_build_prefix_doc(&s->effective, format, s->prefix, sizeof(s->prefix), &plen)) {
         snprintf(status, cap, "Cannot encode IPP print job"); goto done;
@@ -219,6 +290,7 @@ done:
     oap_net_stop();
     free(body);
     if (f) fclose(f);
+    if (raster) remove(OAP_RASTER_TEMP);
     free(s);
     return result;
 }

@@ -1,4 +1,5 @@
 /* Copyright (c) 2026 AmiCradle Team. SPDX-License-Identifier: MIT */
+#define _GNU_SOURCE
 #include "oap_discovery.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,6 +10,64 @@ static void p16(unsigned char *p,unsigned x){p[0]=x>>8;p[1]=x;}
 static size_t attr(unsigned char *p,size_t x,unsigned t,const char *key,const char *v){size_t a=strlen(key),b=strlen(v);p[x++]=t;p16(p+x,a);x+=2;memcpy(p+x,key,a);x+=a;p16(p+x,b);x+=2;memcpy(p+x,v,b);return x+b;}
 static size_t response(unsigned char *p,const char *mime){size_t x=8;memset(p,0,1024);p[0]=1;p[1]=1;p[7]=42;p[x++]=4;x=attr(p,x,0x41,"printer-make-and-model","HP test");x=attr(p,x,0x49,"document-format-supported","image/pwg-raster");if(mime)x=attr(p,x,0x49,"",mime);p[x++]=3;return x;}
 static size_t rr(unsigned char *p,size_t x,const OAPName *owner,unsigned t,const void *data,size_t n){memcpy(p+x,owner->wire,owner->len);x+=owner->len;p16(p+x,t);p16(p+x+2,0x8001);p[x+7]=120;p16(p+x+8,n);x+=10;memcpy(p+x,data,n);return x+n;}
+
+/* GFO-254: a printer without PDF that takes PWG Raster, like the LaserJet M232 (sgray_8 at 300 and 600 dpi) */
+static size_t res(unsigned char *p,size_t x,const char *key,unsigned long xd,unsigned long yd,unsigned units){size_t a=strlen(key);p[x++]=0x32;p16(p+x,a);x+=2;memcpy(p+x,key,a);x+=a;p16(p+x,9);x+=2;p[x]=xd>>24;p[x+1]=xd>>16;p[x+2]=xd>>8;p[x+3]=xd;p[x+4]=yd>>24;p[x+5]=yd>>16;p[x+6]=yd>>8;p[x+7]=yd;p[x+8]=units;return x+9;}
+static size_t raster(unsigned char *p,const char *format,const unsigned long *dpi,size_t ndpi,const char *type1,const char *type2)
+{
+    size_t x=8,i;
+    memset(p,0,1024);p[0]=1;p[1]=1;p[7]=42;p[x++]=4;
+    x=attr(p,x,0x41,"printer-make-and-model","HP LaserJet M232-M237");
+    x=attr(p,x,0x49,"document-format-supported","application/octet-stream");
+    if(format)x=attr(p,x,0x49,"",format);
+    x=attr(p,x,0x49,"","image/urf");x=attr(p,x,0x49,"","application/PCLm");
+    for(i=0;i<ndpi;i++)x=res(p,x,i?"":"pwg-raster-document-resolution-supported",dpi[i],dpi[i],3);
+    if(type1)x=attr(p,x,0x44,"pwg-raster-document-type-supported",type1);
+    if(type2)x=attr(p,x,0x44,"",type2);
+    p[x++]=3;return x;
+}
+static void raster_checks(OAPDiscovery *d)
+{
+    unsigned char ipp[1024];size_t n,i;OAPCaps caps;int done;char note[64];OAPDiscovery *e=calloc(1,sizeof(*e));
+    static const unsigned long m232[]={300,600},hi[]={600,1200},low[]={150,600},tie[]={400,200},odd[]={50,2400};
+    n=raster(ipp,"image/pwg-raster",m232,2,"sgray_8",NULL);
+    CHECK(oap_ipp_parse_caps(ipp,n,42,&caps));
+    CHECK(caps.pdf==OAP_PDF_NO&&caps.ps==OAP_PDF_NO&&caps.pwg==OAP_PDF_YES&&caps.pwg_dpi==300&&caps.pwg_types==OAP_PWG_GREY8);
+    CHECK(oap_caps_route(&caps)==OAP_PDF_RASTER);
+    for(i=0;i<n;i++)CHECK(!oap_ipp_parse_caps(ipp,i,42,&caps));
+    n=raster(ipp,"image/pwg-raster",hi,2,"srgb_8","sgray_8");CHECK(oap_ipp_parse_caps(ipp,n,42,&caps));
+    CHECK(caps.pwg==OAP_PDF_YES&&caps.pwg_dpi==600&&caps.pwg_types==(OAP_PWG_GREY8|OAP_PWG_RGB8));
+    n=raster(ipp,"image/pwg-raster",low,2,"srgb_8",NULL);CHECK(oap_ipp_parse_caps(ipp,n,42,&caps));CHECK(caps.pwg_dpi==150&&caps.pwg_types==OAP_PWG_RGB8);
+    n=raster(ipp,"image/pwg-raster",tie,2,"sgray_8",NULL);CHECK(oap_ipp_parse_caps(ipp,n,42,&caps));CHECK(caps.pwg_dpi==200);
+    /* nothing GFOpenPrint can make: no raster format, no 8-bit type, no usable resolution */
+    n=raster(ipp,NULL,m232,2,"sgray_8",NULL);CHECK(oap_ipp_parse_caps(ipp,n,42,&caps));CHECK(caps.pwg==OAP_PDF_NO&&!caps.pwg_dpi&&!caps.pwg_types&&oap_caps_route(&caps)==OAP_PDF_NO);
+    n=raster(ipp,"image/pwg-raster",m232,2,"black_1","sgray_16");CHECK(oap_ipp_parse_caps(ipp,n,42,&caps));CHECK(caps.pwg==OAP_PDF_NO);
+    n=raster(ipp,"image/pwg-raster",odd,2,"sgray_8",NULL);CHECK(oap_ipp_parse_caps(ipp,n,42,&caps));CHECK(caps.pwg==OAP_PDF_NO);
+    n=raster(ipp,"image/pwg-raster",NULL,0,"sgray_8",NULL);CHECK(oap_ipp_parse_caps(ipp,n,42,&caps));CHECK(caps.pwg==OAP_PDF_NO);
+    {size_t x=8;memset(ipp,0,1024);ipp[0]=1;ipp[1]=1;ipp[7]=42;ipp[x++]=4;x=attr(ipp,x,0x49,"document-format-supported","image/pwg-raster");
+     x=res(ipp,x,"pwg-raster-document-resolution-supported",300,600,3);x=res(ipp,x,"",118,118,4);x=attr(ipp,x,0x44,"pwg-raster-document-type-supported","sgray_8");ipp[x++]=3;
+     CHECK(oap_ipp_parse_caps(ipp,x,42,&caps));CHECK(caps.pwg==OAP_PDF_NO);}      /* not square; dots a cm */
+    /* PDF wins when a printer takes both */
+    {size_t x=8;memset(ipp,0,1024);ipp[0]=1;ipp[1]=1;ipp[7]=42;ipp[x++]=4;x=attr(ipp,x,0x49,"document-format-supported","application/pdf");x=attr(ipp,x,0x49,"","image/pwg-raster");
+     x=res(ipp,x,"pwg-raster-document-resolution-supported",300,300,3);x=attr(ipp,x,0x44,"pwg-raster-document-type-supported","sgray_8");ipp[x++]=3;
+     CHECK(oap_ipp_parse_caps(ipp,x,42,&caps));CHECK(caps.pdf==OAP_PDF_YES&&caps.pwg==OAP_PDF_YES&&oap_caps_route(&caps)==OAP_PDF_YES);}
+    /* the query asks for both raster attributes */
+    n=oap_ipp_query_request("ipp://m232.local:631/ipp/print",9,ipp,sizeof(ipp));CHECK(n);
+    CHECK(memmem(ipp,n,"pwg-raster-document-resolution-supported",40)&&memmem(ipp,n,"pwg-raster-document-type-supported",34));
+    /* saved and read back as a raster printer, and usable */
+    memset(d,0,sizeof(*d));d->count=1;d->printers[0].alive=1;strcpy(d->printers[0].uri,"ipp://m232.local:631/ipp/print");
+    n=raster(ipp,"image/pwg-raster",m232,2,"sgray_8",NULL);CHECK(oap_ipp_parse_caps(ipp,n,42,&d->printers[0].caps));
+    CHECK(oap_pdf_eligible(&d->printers[0]));
+    CHECK(oap_discovery_save("build/test-disc-raster.tsv",d,1,"done"));
+    CHECK(oap_discovery_load("build/test-disc-raster.tsv",e,&done,note,sizeof(note)));
+    CHECK(e->count==1&&e->printers[0].caps.pdf==OAP_PDF_NO&&e->printers[0].caps.pwg==OAP_PDF_YES&&oap_caps_route(&e->printers[0].caps)==OAP_PDF_RASTER&&oap_pdf_eligible(&e->printers[0]));
+    d->printers[0].caps.pwg=OAP_PDF_NO;CHECK(!oap_pdf_eligible(&d->printers[0]));
+    CHECK(oap_discovery_save("build/test-disc-raster.tsv",d,1,"done"));CHECK(oap_discovery_load("build/test-disc-raster.tsv",e,&done,note,sizeof(note)));
+    CHECK(e->printers[0].caps.pdf==OAP_PDF_NO&&e->printers[0].caps.pwg!=OAP_PDF_YES);
+    {FILE *f=fopen("build/test-disc-raster.tsv","w");CHECK(f);fputs("OAPB1\t1\tdone\nP\t9\t1\t0\tX\tipp://x:631/\t\n",f);fclose(f);}
+    CHECK(oap_discovery_load("build/test-disc-raster.tsv",e,&done,note,sizeof(note)));CHECK(e->printers[0].caps.pdf==OAP_PDF_UNKNOWN&&!oap_pdf_eligible(&e->printers[0]));
+    remove("build/test-disc-raster.tsv");free(e);
+}
 int main(void){unsigned char ipp[1024],http[4096],out[2048],pkt[2048],rd[512];OAPCaps caps;size_t n,hn,bn,i,x;int status;OAPName service,host,base;OAPDiscovery *d=calloc(1,sizeof(*d));
  n=response(ipp,"application/pdf");CHECK(oap_ipp_parse_caps(ipp,n,42,&caps));CHECK(caps.pdf==OAP_PDF_YES);CHECK(!strcmp(caps.model,"HP test"));for(i=0;i<n;i++)CHECK(!oap_ipp_parse_caps(ipp,i,42,&caps));CHECK(!oap_ipp_parse_caps(ipp,n,43,&caps));
  n=response(ipp,"application/pdf-invalid");CHECK(oap_ipp_parse_caps(ipp,n,42,&caps));CHECK(caps.pdf==OAP_PDF_NO);
@@ -31,4 +90,4 @@ int main(void){unsigned char ipp[1024],http[4096],out[2048],pkt[2048],rd[512];OA
  /* Print-Job acknowledgements must carry a valid integer job-id. */
  memset(ipp,0,32);ipp[0]=1;ipp[1]=1;ipp[7]=42;ipp[8]=2;ipp[9]=0x21;p16(ipp+10,6);memcpy(ipp+12,"job-id",6);p16(ipp+18,4);ipp[23]=7;ipp[24]=3;
  CHECK(oap_ipp_parse_caps(ipp,25,42,&caps));CHECK(caps.job_id==7);CHECK(!oap_ipp_parse_caps(ipp,24,42,&caps));
- free(d);printf("PASS: %u discovery, MIME gating, DNS bounds, complete HTTP and IPP checks\n",checks);return 0;}
+ raster_checks(d);free(d);printf("PASS: %u discovery, MIME gating, DNS bounds, complete HTTP and IPP checks\n",checks);return 0;}
