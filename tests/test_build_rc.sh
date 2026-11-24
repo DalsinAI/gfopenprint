@@ -24,7 +24,7 @@ if run; then echo 'FAIL: no release notes was taken'; exit 1; fi
 grep -q 'no candidate/RELEASE-NOTES.txt' "$T/log"
 echo notes > "$T/r/candidate/RELEASE-NOTES.txt"
 mkdir -p "$T/bin"                             # a PATH with no lha: it must stop before any build
-for c in head tr; do ln -s "$(command -v $c)" "$T/bin/$c"; done
+for c in head tr dirname; do ln -s "$(command -v $c)" "$T/bin/$c"; done
 if OUT="$T/out" PATH="$T/bin" "$(command -v sh)" "$T/r/build-rc.sh" > "$T/log" 2>&1; then echo 'FAIL: went on with no lha'; exit 1; fi
 grep -q 'no lha on this machine' "$T/log"
 if grep -q built "$T/log"; then echo 'FAIL: the programs were built before the lha check'; exit 1; fi
