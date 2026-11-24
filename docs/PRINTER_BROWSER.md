@@ -70,3 +70,14 @@ Use Printer now verifies the saved ENV:/ENVARC: value and notifies every open
 print/viewer subscriber, including when the same printer is selected again.
 It no longer relies solely on comparing saved URI strings on window ticks.
 See PRINTER_SELECTION_HANDOFF.md for the reproduced failure and native test.
+
+## 24 November: no printers on GFOS (BL-134)
+
+GFOS's host keeps a UDP bind to 0.0.0.0 on 127.0.0.1 unless the instance's
+network is in LAN address mode, which a plain `"network": "lan"` is not. The
+search bound its socket that way, so its mDNS queries never left the PC and
+no printer answered. On daletop's LAN the same query from a 127.0.0.1 socket
+had no replies, and from an unbound one it had replies from both printers.
+The search (and `oap_mdns_resolve`) now send from an unbound socket, and the
+first send picks the LAN address. `tests/test_discovery_bind.sh` fakes that
+host policy and fails if a query leaves from 127.0.0.1.

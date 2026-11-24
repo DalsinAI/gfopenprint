@@ -34,10 +34,8 @@ int oap_mdns_resolve(const char *host, char *ip, size_t ip_cap)
         free(d);
         return 0;
     }
-    memset(&sa, 0, sizeof(sa));
-    sa.sin_family = AF_INET;
-    sa.sin_addr.s_addr = INADDR_ANY;
-    if (bind(fd, (struct sockaddr *)&sa, sizeof(sa)) < 0 || OAP_IOCTL(fd, FIONBIO, &nb) < 0)
+    /* no bind, as C:OAPDiscover's search (src/discovery/network.c) */
+    if (OAP_IOCTL(fd, FIONBIO, &nb) < 0)
         goto out;
     for (tries = 0; tries < 2 && !found; tries++) {
         time_t end = time(NULL) + 1;
