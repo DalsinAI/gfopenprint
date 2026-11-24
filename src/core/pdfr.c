@@ -252,7 +252,7 @@ typedef struct Render {
 } Render;
 
 static long px_x(const Render *r, double x) { return (long)(x * r->scale + 0.5); }
-static long px_y(const Render *r, double y) { return (long)((r->page_h - y) * r->scale + 0.5); }
+static long px_y(const Render *r, double y) { return (long)((r->page_h - y) * r->scale + 0.5) - (long)r->c->y0; }
 
 /* A string's bytes, escapes undone, one character at a time. */
 static void show(const Render *r, const Tok *s, Matrix m, double size)

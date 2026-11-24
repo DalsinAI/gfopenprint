@@ -46,7 +46,7 @@ static int tool_main(int argc, char **argv)
         ok = oap_query_pdf(argv[2], &caps, &tls, note, sizeof(note));
         printf("ok=%d pdf=%d ps=%d verdict=%s backend=%s protocol=%s\nfingerprint=%s\nsubject=%s\nnote=%s\n", ok, caps.pdf, caps.ps,
                verdict_name(tls.verdict), tls.backend, tls.protocol, tls.fingerprint, tls.subject, note);
-        printf("pwg=%d dpi=%lu types=%d color=%d duplex=%d\n", caps.pwg, caps.pwg_dpi, caps.pwg_types, caps.color, caps.duplex);
+        printf("pwg=%d urf=%d dpi=%lu types=%d color=%d duplex=%d\n", caps.pwg, caps.urf, caps.pwg_dpi, caps.pwg_types, caps.color, caps.duplex);
         oap_net_stop();
         return ok ? 0 : 1;
     }
@@ -63,7 +63,8 @@ static int tool_main(int argc, char **argv)
         route = argc == 5 && !strcmp(argv[4], "raster") ? OAP_PDF_RASTER : ok ? oap_caps_route(&caps) : OAP_PDF_UNKNOWN;
         oap_testpage_init(t, "GFOS test page", "GFOpenPrint: colour, grey and what printed this page");
 #ifdef __amigaos__
-        oap_testpage_amiga(t, caps.name[0] ? caps.name : caps.model, argv[2], route, note, oap_version + 6);
+        oap_testpage_amiga(t, caps.name[0] ? caps.name : caps.model, argv[2], route | (route == OAP_PDF_RASTER && caps.urf ? OAP_TP_URF : 0),
+                           note, oap_version + 6);
 #else
         oap_testpage_line(t, "Printer", "%s", argv[2]);
 #endif

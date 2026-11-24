@@ -165,9 +165,40 @@ static void test_stream(void)
     oap_pwg_free(&w); free(b.b);
 }
 
+/* Apple raster's headers: the stream's (UNIRAST, the page count) and a page's 32 bytes */
+static void test_urf(void)
+{
+    Buf b = {0, 0, 0};
+    OAPPwgWriter w;
+    OAPPwgPage p;
+    unsigned char h[OAP_URF_HEADER], row[3 * 5];
+    memset(&p, 0, sizeof(p));
+    p.width = 5; p.height = 2; p.dpi = 600; p.colorspace = OAP_PWG_SRGB;
+    CHECK(oap_urf_header(&p, h));
+    CHECK(h[0] == 24 && h[1] == 1 && h[2] == 1 && h[3] == 4);
+    CHECK(h[12] == 0 && h[15] == 5 && h[19] == 2 && h[22] == 2 && h[23] == 0x58);      /* 600 = 0x258 */
+    p.colorspace = OAP_PWG_SGRAY; p.duplex = 1;
+    CHECK(oap_urf_header(&p, h) && h[0] == 8 && h[1] == 0 && h[2] == 3);
+    p.tumble = 1;
+    CHECK(oap_urf_header(&p, h) && h[2] == 2);
+    p.dpi = 0;
+    CHECK(!oap_urf_header(&p, h));
+    CHECK(!oap_urf_start(&w, sink, &b, 0));
+    p.dpi = 600; p.duplex = p.tumble = 0; p.colorspace = OAP_PWG_SRGB;
+    CHECK(oap_urf_start(&w, sink, &b, 1));
+    CHECK(b.n == 12 && !memcmp(b.b, "UNIRAST\0\0\0\0\1", 12));
+    memset(row, 255, sizeof(row));
+    CHECK(oap_pwg_page(&w, &p) && oap_pwg_row(&w, row) && oap_pwg_row(&w, row) && oap_pwg_end_page(&w));
+    /* 32 header bytes, then both rows as one: repeat 1, five white pixels as a run */
+    CHECK(b.n == 12 + 32 + 1 + 1 + 3 && b.b[44] == 1 && b.b[45] == 4 && b.b[46] == 255);
+    oap_pwg_free(&w);
+    free(b.b);
+}
+
 int main(void)
 {
     test_rows();
+    test_urf();
     test_header();
     test_stream();
     printf("test_pwg: %d checks, %d failed\n", checks, failures);

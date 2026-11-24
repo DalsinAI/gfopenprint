@@ -77,6 +77,7 @@ static int make_raster(SendWorkspace *s, FILE **f, long *flen, char *status, siz
     }
     memset(&j, 0, sizeof(j));
     j.dpi = s->capabilities.pwg_dpi;
+    j.urf = s->capabilities.urf;
     j.rgb = s->effective.color != OAP_MONO && (s->capabilities.pwg_types & OAP_PWG_RGB8)
             ? 1 : !(s->capabilities.pwg_types & OAP_PWG_GREY8);
     j.first = s->effective.page_start > 0 && s->effective.page_end >= s->effective.page_start ? s->effective.page_start : 0;
@@ -171,7 +172,7 @@ static int submit(const char *pdf, const char *want, const OAPJobOptions *o,
     /* no PDF, but PWG Raster: GFOpenPrint draws its own PDF's pages and sends those */
     raster = !ps && (s->capabilities.pdf != OAP_PDF_YES || s->effective.raster) && s->capabilities.pwg == OAP_PDF_YES;
     if (!ps && s->effective.raster && !raster) {
-        snprintf(status, cap, "Not sent: the printer doesn't take PWG Raster pages GFOpenPrint can make"); goto done;
+        snprintf(status, cap, "Not sent: the printer doesn't take raster pages GFOpenPrint can make (PWG Raster or Apple raster)"); goto done;
     }
     if (!ps && !raster && s->capabilities.pdf != OAP_PDF_YES) { snprintf(status, cap, "PDF not confirmed: %.180s", s->note); goto done; }
     if (s->capabilities.accepting == 0) { snprintf(status, cap, "Printer is not accepting jobs"); goto done; }
@@ -186,7 +187,7 @@ static int submit(const char *pdf, const char *want, const OAPJobOptions *o,
         }
         if (!progress(notify, ctx, "rendering", 0, (unsigned long)flen)) goto cancelled;
         if (!make_raster(s, &f, &flen, status, cap)) goto done;
-        format = OAP_FORMAT_PWG;
+        format = s->capabilities.urf ? OAP_FORMAT_URF : OAP_FORMAT_PWG;
         kind = "raster pages";
     }
     if (!oap_ipp_build_prefix_doc(&s->effective, format, s->prefix, sizeof(s->prefix), &plen)) {

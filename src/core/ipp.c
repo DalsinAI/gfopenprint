@@ -90,7 +90,7 @@ int oap_ipp_build_prefix_doc(const OAPJobOptions *o,const char *format,unsigned 
     unsigned char range[8],name[256];
     if(!o||!b||!out||!format)return 0;
     ps=!strcmp(format,OAP_FORMAT_PS);
-    pwg=!strcmp(format,"image/pwg-raster");
+    pwg=!strcmp(format,"image/pwg-raster")||!strcmp(format,"image/urf");
     if(!ps&&!pwg&&strcmp(format,OAP_FORMAT_PDF))return 0;
     nl=utf8_name(o->job_name,name,sizeof(name));
     media=oap_ipp_media(o->paper);

@@ -41,7 +41,7 @@ static int canvas(OAPCanvas *c, const OAPPdfDoc *d, unsigned long page, unsigned
 {
     unsigned long w, h;
     if (!oap_pdfr_page_size(d, page, &w, &h)) return 0;
-    c->dpi = dpi; c->channels = channels;
+    c->dpi = dpi; c->channels = channels; c->y0 = 0;
     c->w = w * dpi / 72; c->h = h * dpi / 72;
     c->pix = malloc(c->w * c->h * (size_t)channels);
     if (!c->pix) return 0;

@@ -22,8 +22,10 @@ typedef struct OAPName { unsigned char wire[256]; size_t len; } OAPName;
 /* pdf and ps: OAP_PDF_YES when document-format-supported lists application/pdf (application/postscript), _NO when
  * it lists others but not that one, _UNKNOWN when the printer didn't say. */
 /* pwg: as pdf, for image/pwg-raster, and _YES only with a sgray_8 or srgb_8 type (pwg_types, OAP_PWG_*) and a square
- * resolution in dpi (pwg_dpi: 300 when offered, else the nearest). */
-typedef struct OAPCaps { int pdf, ps, accepting, state, color, duplex, pwg, pwg_types; unsigned long pwg_dpi; unsigned status; uint32_t job_id; char name[128], model[128], location[128], reasons[256]; } OAPCaps;
+ * resolution in dpi (pwg_dpi: 300 when offered, else the nearest). A printer without PWG Raster that takes Apple
+ * raster (image/urf, urf-supported W8 or SRGB24 and RS dots an inch) has the same, with urf set: the same pages go
+ * with Apple's headers. */
+typedef struct OAPCaps { int pdf, ps, accepting, state, color, duplex, pwg, pwg_types, urf; unsigned long pwg_dpi; unsigned status; uint32_t job_id; char name[128], model[128], location[128], reasons[256]; } OAPCaps;
 typedef struct OAPDiscovered { OAPName service, target; char label[128], host[256], ip[16], path[256], uri[640], note[256]; unsigned port; int secure, have_srv, have_txt, alive; OAPCaps caps;
     int cert;                       /* ipps://: OAP_CERT_* (oap_tls.h), what the check found */
     char fingerprint[96], cert_subject[128];

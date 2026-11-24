@@ -180,7 +180,8 @@ int oap_query_pdf(const char *uri_text, OAPCaps *caps, OAPTlsInfo *tls, char *no
     if (caps->pdf == OAP_PDF_YES)
         snprintf(note, note_cap, "PDF confirmed; %s%s%s", state_words(caps), caps->reasons[0] ? "; " : "", caps->reasons);
     else if (caps->pwg == OAP_PDF_YES)
-        snprintf(note, note_cap, "No PDF; prints GFOpenPrint's own pages as raster (%lu dpi, %s); %s%s%s", caps->pwg_dpi,
+        snprintf(note, note_cap, "No PDF; prints GFOpenPrint's own pages as %sraster (%lu dpi, %s); %s%s%s",
+                 caps->urf ? "Apple " : "", caps->pwg_dpi,
                  caps->pwg_types & OAP_PWG_RGB8 ? "colour" : "grey", state_words(caps), caps->reasons[0] ? "; " : "",
                  caps->reasons);
     else if (caps->pdf == OAP_PDF_NO)

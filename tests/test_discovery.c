@@ -51,9 +51,26 @@ static void raster_checks(OAPDiscovery *d)
     {size_t x=8;memset(ipp,0,1024);ipp[0]=1;ipp[1]=1;ipp[7]=42;ipp[x++]=4;x=attr(ipp,x,0x49,"document-format-supported","application/pdf");x=attr(ipp,x,0x49,"","image/pwg-raster");
      x=res(ipp,x,"pwg-raster-document-resolution-supported",300,300,3);x=attr(ipp,x,0x44,"pwg-raster-document-type-supported","sgray_8");ipp[x++]=3;
      CHECK(oap_ipp_parse_caps(ipp,x,42,&caps));CHECK(caps.pdf==OAP_PDF_YES&&caps.pwg==OAP_PDF_YES&&oap_caps_route(&caps)==OAP_PDF_YES);}
+    /* Apple raster for a printer without PWG Raster (the HP M282): image/urf with urf-supported */
+    {size_t x=8;memset(ipp,0,1024);ipp[0]=1;ipp[1]=1;ipp[7]=42;ipp[x++]=4;x=attr(ipp,x,0x49,"document-format-supported","image/urf");x=attr(ipp,x,0x49,"","application/pdf");
+     x=attr(ipp,x,0x44,"urf-supported","V1.4");x=attr(ipp,x,0x44,"","W8");x=attr(ipp,x,0x44,"","SRGB24");x=attr(ipp,x,0x44,"","RS600");ipp[x++]=3;
+     CHECK(oap_ipp_parse_caps(ipp,x,42,&caps));CHECK(caps.pdf==OAP_PDF_YES&&caps.pwg==OAP_PDF_YES&&caps.urf&&caps.pwg_dpi==600&&caps.pwg_types==(OAP_PWG_GREY8|OAP_PWG_RGB8)&&oap_caps_route(&caps)==OAP_PDF_YES);}
+    {size_t x=8;memset(ipp,0,1024);ipp[0]=1;ipp[1]=1;ipp[7]=42;ipp[x++]=4;x=attr(ipp,x,0x49,"document-format-supported","image/urf");
+     x=attr(ipp,x,0x44,"urf-supported","RS150-300-600");x=attr(ipp,x,0x44,"","W8");ipp[x++]=3;
+     CHECK(oap_ipp_parse_caps(ipp,x,42,&caps));CHECK(caps.pdf==OAP_PDF_NO&&caps.urf&&caps.pwg_dpi==300&&caps.pwg_types==OAP_PWG_GREY8&&oap_caps_route(&caps)==OAP_PDF_RASTER);}
+    /* PWG Raster wins over Apple raster */
+    {size_t x=8;memset(ipp,0,1024);ipp[0]=1;ipp[1]=1;ipp[7]=42;ipp[x++]=4;x=attr(ipp,x,0x49,"document-format-supported","image/urf");x=attr(ipp,x,0x49,"","image/pwg-raster");
+     x=res(ipp,x,"pwg-raster-document-resolution-supported",600,600,3);x=attr(ipp,x,0x44,"pwg-raster-document-type-supported","sgray_8");
+     x=attr(ipp,x,0x44,"urf-supported","W8");x=attr(ipp,x,0x44,"","SRGB24");x=attr(ipp,x,0x44,"","RS300");ipp[x++]=3;
+     CHECK(oap_ipp_parse_caps(ipp,x,42,&caps));CHECK(!caps.urf&&caps.pwg_dpi==600&&caps.pwg_types==OAP_PWG_GREY8);}
+    /* not enough to go on: no image/urf among the formats; no colour space; no resolution; a bad one */
+    {static const char *const kinds[][3]={{"application/pdf","W8","RS300"},{"image/urf","DM1","RS300"},{"image/urf","W8","CP99"},{"image/urf","W8","RS3x0"},{"image/urf","W8","RS"},{"image/urf","W8","RS50"}};size_t k;
+     for(k=0;k<sizeof(kinds)/sizeof(*kinds);k++){size_t x=8;memset(ipp,0,1024);ipp[0]=1;ipp[1]=1;ipp[7]=42;ipp[x++]=4;x=attr(ipp,x,0x49,"document-format-supported",kinds[k][0]);
+      x=attr(ipp,x,0x44,"urf-supported",kinds[k][1]);x=attr(ipp,x,0x44,"",kinds[k][2]);ipp[x++]=3;
+      CHECK(oap_ipp_parse_caps(ipp,x,42,&caps));CHECK(caps.pwg==OAP_PDF_NO&&!caps.urf&&!caps.pwg_dpi);}}
     /* the query asks for both raster attributes */
     n=oap_ipp_query_request("ipp://m232.local:631/ipp/print",9,ipp,sizeof(ipp));CHECK(n);
-    CHECK(memmem(ipp,n,"pwg-raster-document-resolution-supported",40)&&memmem(ipp,n,"pwg-raster-document-type-supported",34));
+    CHECK(memmem(ipp,n,"pwg-raster-document-resolution-supported",40)&&memmem(ipp,n,"pwg-raster-document-type-supported",34)&&memmem(ipp,n,"urf-supported",13));
     /* saved and read back as a raster printer, and usable */
     memset(d,0,sizeof(*d));d->count=1;d->printers[0].alive=1;strcpy(d->printers[0].uri,"ipp://m232.local:631/ipp/print");
     n=raster(ipp,"image/pwg-raster",m232,2,"sgray_8",NULL);CHECK(oap_ipp_parse_caps(ipp,n,42,&d->printers[0].caps));

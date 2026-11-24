@@ -27,8 +27,9 @@ int oap_http_post(OAPConn *c,const OAPUri *u,unsigned long len,const char *auth)
 int oap_ipp_login(OAPConn *c,const OAPUri *u,const OAPHttpReply *r,unsigned k,char *a,size_t cap,char *note,size_t nc){
  (void)c;(void)k;CHECK(r->status==401);if(!u->secure){snprintf(note,nc,"passwords only over ipps://");return 0;}snprintf(a,cap,"Authorization: Basic eA==\r\n");return 1;}
 int oap_query_pdf(const char *uri,OAPCaps *c,OAPTlsInfo *t,char *note,size_t n){
- queried++;memset(c,0,sizeof(*c));c->pdf=mode==1||raster_caps==1?OAP_PDF_NO:OAP_PDF_YES;c->ps=ps_caps;c->accepting=1;c->color=1;
+ queried++;memset(c,0,sizeof(*c));c->pdf=mode==1||raster_caps==1||raster_caps==3?OAP_PDF_NO:OAP_PDF_YES;c->ps=ps_caps;c->accepting=1;c->color=1;
  if(raster_caps){c->pwg=OAP_PDF_YES;c->pwg_dpi=100;c->pwg_types=OAP_PWG_GREY8;c->color=0;c->duplex=1;}
+ if(raster_caps==3)c->urf=1;                                                     /* Apple raster, not PWG */
  if(t){memset(t,0,sizeof(*t));t->verdict=!strncmp(uri,"ipps://",7)?(mode==7?OAP_CERT_ASK:mode==8?OAP_CERT_NOTLS:OAP_CERT_TRUSTED):OAP_CERT_NONE;}
  snprintf(note,n,"mock query");return mode!=8;
 }
@@ -107,6 +108,12 @@ static void raster_jobs(void){
  CHECK(!count("orientation-requested")&&!count("page-ranges")&&!count("application/pdf"));
  CHECK(count("copies")==1&&count("iso_a4_210x297mm")==3&&count("monochrome")==1);  /* media: the job's and each page's */
  CHECK((f=fopen("build/oap-raster.pwg","rb"))==NULL);if(f)fclose(f);                  /* the pages don't stay */
+ /* Apple raster: the same pages under UNIRAST headers, sent as image/urf (24 Nov 2026) */
+ raster_caps=3;reset(0,0);rc=oap_ipp_submit_pdf_ex("build/driver-300-lines.pdf",&o,status,sizeof(status),progress,NULL);
+ CHECK(rc==OAP_SEND_ACCEPTED||(printf("%s\n",status),0));
+ CHECK(count("image/urf")==1&&count("UNIRAST")==1&&!count("RaS2")&&!count("PwgRaster")&&!count("image/pwg-raster"));
+ CHECK(!count("orientation-requested")&&!count("page-ranges")&&!count("application/pdf"));
+ raster_caps=1;
  /* not yet: two-sided; refused before anything is sent */
  o.duplex=OAP_DUPLEX_LONG;reset(0,0);rc=oap_ipp_submit_pdf_ex("build/driver-300-lines.pdf",&o,status,sizeof(status),progress,NULL);
  CHECK(rc==OAP_SEND_ERROR&&writes==0&&strstr(status,"two-sided")!=NULL);o.duplex=OAP_SIMPLEX;

@@ -102,7 +102,7 @@ static unsigned char *direct(const unsigned char *pdf, size_t n, unsigned long p
     unsigned long wp, hp;
     char err[160];
     if (!oap_pdfr_open(&d, pdf, n, err, sizeof(err)) || !oap_pdfr_page_size(&d, page, &wp, &hp)) return NULL;
-    c.w = (wp * dpi + 36) / 72; c.h = (hp * dpi + 36) / 72; c.channels = ch; c.dpi = dpi;
+    c.w = (wp * dpi + 36) / 72; c.h = (hp * dpi + 36) / 72; c.channels = ch; c.dpi = dpi; c.y0 = 0;
     c.pix = malloc(c.w * c.h * (size_t)ch);
     memset(c.pix, 255, c.w * c.h * (size_t)ch);
     if (!oap_pdfr_render(&d, page, &c, draw, NULL, err, sizeof(err))) { free(c.pix); return NULL; }
@@ -205,9 +205,57 @@ static void test_pictures_need_no_font(void)
     free(b.b); free(pdf);
 }
 
+/* Drawn a band of rows at a time, a page is the same as drawn whole; and Apple raster (image/urf) carries the same
+ * rows as PWG Raster, under its own headers (24 Nov 2026, for the HP M282) */
+static void test_bands_and_urf(void)
+{
+    static const char *const files[] = { "build/driver-picture.pdf", "build/driver-300-lines.pdf" };
+    int f;
+    for (f = 0; f < 2; f++) {
+        size_t n, at = 4, u = 12;
+        unsigned char *pdf = load(files[f], &n);
+        OAPRasterJob j;
+        Buf whole = {0}, banded = {0}, urf = {0};
+        char err[160] = "";
+        unsigned long pages, page;
+        if (!pdf) return;
+        memset(&j, 0, sizeof(j));
+        j.dpi = f ? 100 : 72; j.rgb = !f; j.draw = draw; j.media_name = "iso_a4_210x297mm";
+        if (f) { j.first = 1; j.last = 2; }
+        pages = oap_pdf_to_pwg(pdf, n, &j, sink, &whole, err, sizeof(err));
+        CHECK(pages == 2 || (printf("%s\n", err), 0));
+        j.band_bytes = 7 * 595 * 3;               /* 7 rows of the picture's page, 9 of the text's at 100 dpi */
+        CHECK(oap_pdf_to_pwg(pdf, n, &j, sink, &banded, err, sizeof(err)) == pages);
+        CHECK(banded.n == whole.n && !memcmp(banded.b, whole.b, whole.n));
+        j.band_bytes = 1;                         /* a row at a time */
+        banded.n = 0;
+        CHECK(oap_pdf_to_pwg(pdf, n, &j, sink, &banded, err, sizeof(err)) == pages);
+        CHECK(banded.n == whole.n && !memcmp(banded.b, whole.b, whole.n));
+        j.band_bytes = 0; j.urf = 1;
+        CHECK(oap_pdf_to_pwg(pdf, n, &j, sink, &urf, err, sizeof(err)) == pages);
+        CHECK(urf.n > 12 && !memcmp(urf.b, "UNIRAST", 8) && be32(urf.b + 8) == pages);
+        CHECK(urf.n - 12 - 32 * pages == whole.n - 4 - 1796 * pages);
+        for (page = 0; page < pages; page++) {
+            Back pg;
+            size_t rows_at = at + 1796;
+            const unsigned char *h = urf.b + u;
+            memset(&pg, 0, sizeof(pg));
+            CHECK(read_page(&whole, &at, &pg));
+            free(pg.pix);
+            CHECK(h[0] == (f ? 8 : 24) && h[1] == (f ? 0 : 1) && h[2] == 1 && h[3] == 4);
+            CHECK(be32(h + 12) == pg.w && be32(h + 16) == pg.h && be32(h + 20) == j.dpi);
+            CHECK(!memcmp(h + 32, whole.b + rows_at, at - rows_at));
+            u += 32 + (at - rows_at);
+        }
+        CHECK(u == urf.n);
+        free(whole.b); free(banded.b); free(urf.b); free(pdf);
+    }
+}
+
 int main(void)
 {
     test_landscape_rgb();
+    test_bands_and_urf();
     test_range_grey();
     test_pictures_need_no_font();
     printf("test_pdf2pwg: %d checks, %d failed\n", checks, failures);

@@ -38,7 +38,7 @@ static void render(const unsigned char *pdf, size_t n, int channels, OAPCanvas *
 {
     static OAPPdfDoc d;
     char err[160] = "";
-    c->dpi = 72; c->channels = channels; c->w = 595; c->h = 842;
+    c->dpi = 72; c->channels = channels; c->w = 595; c->h = 842; c->y0 = 0;
     c->pix = malloc(c->w * c->h * (size_t)channels);
     memset(c->pix, 255, c->w * c->h * (size_t)channels);
     ndrawn = 0;
