@@ -60,11 +60,11 @@ int oap_discover_run(const char *output)
     fd = socket(AF_INET, SOCK_DGRAM, 0);
     if (fd < 0)
         goto fail;
-    memset(&sa, 0, sizeof(sa));
-    sa.sin_family = AF_INET;
-    sa.sin_port = 0;
-    sa.sin_addr.s_addr = INADDR_ANY;
-    if (bind(fd, (struct sockaddr *)&sa, sizeof(sa)) < 0 || OAP_IOCTL(fd, FIONBIO, &nb) < 0)
+    /* No bind: the first sendto gives the socket its port and the LAN
+     * address the query leaves from. GFOS's host keeps a wildcard bind on
+     * 127.0.0.1 unless the network is in LAN address mode, and a query sent
+     * from there never reaches the printers (BL-134). */
+    if (OAP_IOCTL(fd, FIONBIO, &nb) < 0)
         goto fail;
     oap_discovery_save(output, d, 0, "Discovering IPP printers on the local network...");
     /* One-shot mDNS, ephemeral source port: RFC 6762 section 6.7. */

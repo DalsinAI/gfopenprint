@@ -5,9 +5,9 @@ CFLAGS ?= -O2 -Wall -Wextra -Werror -std=c11
 CPPFLAGS += -Iinclude
 CORE = src/core/job.c src/core/ipp.c src/core/pdf_demo.c
 
-.PHONY: all test clean test-core test-discovery test-submit test-auth test-viewer test-driver test-discovery-sendfail test-ipps test-paper test-paper-page test-rawps
+.PHONY: all test clean test-core test-discovery test-submit test-auth test-viewer test-driver test-discovery-sendfail test-discovery-bind test-ipps test-paper test-paper-page test-rawps
 all: test
-test: test-core test-discovery test-submit test-auth test-viewer test-driver test-discovery-sendfail test-paper test-paper-page
+test: test-core test-discovery test-submit test-auth test-viewer test-driver test-discovery-sendfail test-discovery-bind test-paper test-paper-page
 
 build/test_core: tests/test_core.c $(CORE) include/oap.h
 	mkdir -p build
@@ -48,6 +48,8 @@ test-driver: build/test_driver
 
 test-discovery-sendfail:
 	sh tests/test_discovery_sendfail.sh
+test-discovery-bind:
+	sh tests/test_discovery_bind.sh
 
 # Where the Print window's paper starts (.job, GFOpenPrefs' Printing page, its own) and each size's IPP media name;
 # writes each paper's Print-Job request start to build/paper-*.ipp (files only, nothing sent).
