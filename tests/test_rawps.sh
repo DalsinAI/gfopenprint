@@ -19,7 +19,8 @@ cd "$OUT"
 CC=${HOST_CC:-cc}
 "$CC" -std=c11 -D_DEFAULT_SOURCE -O2 -Wall -Wextra -Werror -I"$ROOT/include" -o ipps_tool "$ROOT/tests/host/ipps_tool.c" \
     "$ROOT"/src/net/*.c "$ROOT/src/tls/tls.c" "$ROOT/src/tls/trust.c" "$ROOT/src/core/ipp.c" "$ROOT/src/core/job.c" \
-    "$ROOT/src/discovery/protocol.c" "$ROOT/src/discovery/http.c"
+    "$ROOT/src/discovery/protocol.c" "$ROOT/src/discovery/http.c" \
+    "$ROOT/src/core/pdf2pwg.c" "$ROOT/src/core/pwg.c" "$ROOT/src/core/pdfr.c" "$ROOT/src/core/inflate.c" "$ROOT/src/core/raster_font_none.c"
 
 # A PostScript job as a program writes it (its title in the DSC header), a PDF, and PCL.
 printf '%%!PS-Adobe-3.0\n%%%%Title: (Quarterly report)\n%%%%Creator: PageStream\n%%%%Pages: 1\n%%%%EndComments\n/Courier findfont 12 scalefont setfont\n72 720 moveto (GFOpenPrint raw PostScript) show\nshowpage\n%%%%EOF\n' > report.ps

@@ -14,8 +14,9 @@
 #include <string.h>
 #include "oap_raster.h"
 
-struct GfxBase *GfxBase;
+/* GfxBase is the program's (OAVWorker opens its own); opened here only when it hasn't, and then closed here */
 struct Library *DiskfontBase;
+static int own_gfx;
 
 #define CELL_MAX 400                     /* pixels: a character at 1200 dpi and 20 pt is 333 */
 
@@ -88,7 +89,7 @@ static void draw(void *ctx, OAPCanvas *c, long x, long y, unsigned long size_px,
 OAPDrawChar oap_raster_font(void **ctx)
 {
     *ctx = NULL;
-    if (!GfxBase) GfxBase = (struct GfxBase *)OpenLibrary((CONST_STRPTR)"graphics.library", 37);
+    if (!GfxBase) { GfxBase = (struct GfxBase *)OpenLibrary((CONST_STRPTR)"graphics.library", 37); own_gfx = GfxBase != NULL; }
     if (!DiskfontBase) DiskfontBase = OpenLibrary((CONST_STRPTR)"diskfont.library", 37);
     if (!GfxBase || !DiskfontBase) { oap_raster_font_close(); return NULL; }
     return draw;
@@ -98,5 +99,5 @@ void oap_raster_font_close(void)
 {
     drop_font();
     if (DiskfontBase) { CloseLibrary(DiskfontBase); DiskfontBase = NULL; }
-    if (GfxBase) { CloseLibrary((struct Library *)GfxBase); GfxBase = NULL; }
+    if (own_gfx) { CloseLibrary((struct Library *)GfxBase); GfxBase = NULL; own_gfx = 0; }
 }
