@@ -22,8 +22,14 @@ echo '0.4-rc1' > "$T/r/candidate/VERSION"
 rm "$T/r/candidate/RELEASE-NOTES.txt"
 if run; then echo 'FAIL: no release notes was taken'; exit 1; fi
 grep -q 'no candidate/RELEASE-NOTES.txt' "$T/log"
+echo notes > "$T/r/candidate/RELEASE-NOTES.txt"
+mkdir -p "$T/bin"                             # a PATH with no lha: it must stop before any build
+for c in head tr; do ln -s "$(command -v $c)" "$T/bin/$c"; done
+if OUT="$T/out" PATH="$T/bin" "$(command -v sh)" "$T/r/build-rc.sh" > "$T/log" 2>&1; then echo 'FAIL: went on with no lha'; exit 1; fi
+grep -q 'no lha on this machine' "$T/log"
+if grep -q built "$T/log"; then echo 'FAIL: the programs were built before the lha check'; exit 1; fi
 v=$(head -n 1 "$ROOT/candidate/VERSION")
 case "$v" in [0-9]*.[0-9]*-rc[0-9]*|[0-9]*.[0-9]*) ;; *) echo "FAIL: candidate/VERSION is $v"; exit 1 ;; esac
 [ -s "$ROOT/candidate/RELEASE-NOTES.txt" ]
 grep -q "GFOpenPrint $v" "$ROOT/candidate/RELEASE-NOTES.txt" || { echo 'FAIL: the release notes do not name the version'; exit 1; }
-printf 'PASS: build-rc.sh refuses a bad version or no notes; candidate %s has its notes\n' "$v"
+printf 'PASS: build-rc.sh refuses a bad version, no notes or no lha (before building); candidate %s has its notes\n' "$v"
