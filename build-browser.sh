@@ -1,8 +1,13 @@
 #!/bin/sh
 set -eu
 ROOT=$(CDPATH= cd -- "$(dirname "$0")" && pwd)
-CC=${AMIGA_CC:-$(command -v m68k-amigaos-gcc || echo m68k-amigaos-gcc)}   # set AMIGA_CC, or have it on PATH
-OUT=${OAP_OUT:-"$ROOT/build/amigaos3"}   # set OAP_OUT to build elsewhere
+# The compiler and where it builds, as build-amiga.sh: AMIGA_CC, else the kitchen's STOVE, else PATH;
+# OAP_OUT, else the kitchen's OUT (so stove_build lists OAPDiscover and OAPPrinters), else build/amigaos3
+if [ -n "${AMIGA_CC:-}" ]; then CC=$AMIGA_CC
+elif [ -n "${STOVE:-}" ] && [ -x "$STOVE/prefix/bin/m68k-amigaos-gcc" ]; then CC="$STOVE/prefix/bin/m68k-amigaos-gcc"
+else CC=$(command -v m68k-amigaos-gcc || echo m68k-amigaos-gcc); fi
+OUT=${OAP_OUT:-${OUT:-"$ROOT/build/amigaos3"}}
+echo "compiler: $CC ($("$CC" --version 2>/dev/null | head -1))"
 mkdir -p "$OUT"
 # Strong library-base definitions prevent libnix autolib from opening window.library.
 # ReAction classes and bsdsocket.library are opened explicitly by our code.
