@@ -70,11 +70,30 @@ static void put(Buf *b, const char *fmt, ...)
     b->n += (size_t)k;
 }
 
+/* A number as PDF writes it, up to three decimals, with no floating-point printf: the Amiga's C library
+ * leaves %g and %f out, so they would come out as letters. Up to eight at a time in one put(). */
+static const char *num(double v)
+{
+    static char ring[8][24];
+    static unsigned at;
+    char *o = ring[at++ & 7];
+    long m = (long)(v < 0 ? -v * 1000 + 0.5 : v * 1000 + 0.5);
+    long whole = m / 1000, frac = m % 1000;
+    int k = snprintf(o, 24, "%s%ld", v < 0 && m ? "-" : "", whole);
+    if (frac && k > 0 && k < 18) {
+        o[k++] = '.';
+        o[k++] = (char)('0' + frac / 100); frac %= 100;
+        if (frac) { o[k++] = (char)('0' + frac / 10); frac %= 10; if (frac) o[k++] = (char)('0' + frac); }
+        o[k] = 0;
+    }
+    return o;
+}
+
 static void text(Buf *b, double size, double x, double y, const char *s)
 {
     char esc[2 * OAP_TP_TEXT + 64];
     pdf_text(esc, sizeof(esc), s);
-    put(b, "0 g BT /F1 %g Tf %g %g Td (%s) Tj ET\n", size, x, y, esc);   /* text in black, as raster pages draw it */
+    put(b, "0 g BT /F1 %s Tf %s %s Td (%s) Tj ET\n", num(size), num(x), num(y), esc);   /* text in black, as raster pages draw it */
 }
 
 static double c255(unsigned char v) { return v / 255.0; }
@@ -98,12 +117,12 @@ int oap_pdf_write_testpage(const char *path, const OAPTestPage *t)
     for (i = 0; i < OAP_TP_SWATCHES; i++) {
         const unsigned char *c = oap_tp_swatch_rgb[i];
         double x = 40 + i * 65;
-        put(&b, "%.3f %.3f %.3f rg %g 660 60 80 re f\n", c255(c[0]), c255(c[1]), c255(c[2]), x);
-        if (c[0] == 255 && c[1] == 255 && c[2] == 255) put(&b, "0 G 0.5 w %g 660 60 80 re S\n", x);
+        put(&b, "%s %s %s rg %s 660 60 80 re f\n", num(c255(c[0])), num(c255(c[1])), num(c255(c[2])), num(x));
+        if (c[0] == 255 && c[1] == 255 && c[2] == 255) put(&b, "0 G 0.5 w %s 660 60 80 re S\n", num(x));
         text(&b, 8, x, 648, oap_tp_swatch_name[i]);
     }
     /* the grey ramp: black to white in eleven steps */
-    for (i = 0; i <= 10; i++) put(&b, "%.1f g %g 600 46 30 re f\n", i / 10.0, 40 + i * 46.8);
+    for (i = 0; i <= 10; i++) put(&b, "%s g %s 600 46 30 re f\n", num(i / 10.0), num(40 + i * 46.8));
     put(&b, "0 G 0.5 w 40 600 515 30 re S\n");
     text(&b, 8, 40, 588, "black");
     text(&b, 8, 285, 588, "grey");
@@ -113,7 +132,7 @@ int oap_pdf_write_testpage(const char *path, const OAPTestPage *t)
     for (i = 0; i < t->n && y > 40; i++) {
         if (!t->label[i][0]) {
             if (i) y -= 6;
-            put(&b, "0.11 0.27 0.53 rg 40 %g 515 1 re f 0 g\n", y - 3);
+            put(&b, "0.11 0.27 0.53 rg 40 %s 515 1 re f 0 g\n", num(y - 3));
             text(&b, 12, 40, y, t->value[i]);
             y -= 17;
         } else {

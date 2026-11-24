@@ -6,6 +6,7 @@
 #include <exec/memory.h>
 #include <graphics/gfxbase.h>
 #include <dos/dos.h>
+#include <dos/dosextens.h>
 #include <dos/datetime.h>
 #include <proto/exec.h>
 #include <proto/dos.h>
@@ -58,9 +59,15 @@ static void mem(char *out, size_t cap, ULONG kind)
         snprintf(out, cap, "%lu KB, %lu KB free", (unsigned long)(total >> 10), (unsigned long)(free_ >> 10));
 }
 
+/* Whether a path is there, without "Please insert volume" when it isn't. */
 static int exists(const char *path)
 {
-    BPTR l = Lock((CONST_STRPTR)path, ACCESS_READ);
+    struct Process *me = (struct Process *)FindTask(NULL);
+    APTR window = me->pr_WindowPtr;
+    BPTR l;
+    me->pr_WindowPtr = (APTR)-1;
+    l = Lock((CONST_STRPTR)path, ACCESS_READ);
+    me->pr_WindowPtr = window;
     if (!l) return 0;
     UnLock(l);
     return 1;
@@ -126,6 +133,9 @@ void oap_testpage_amiga(OAPTestPage *t, const char *printer_name, const char *ur
     UWORD f = SysBase->AttnFlags;
     unsigned port;
     int had_net = SocketBase != NULL, net = oap_net_start(), own_gfx = 0;
+    struct Process *me = (struct Process *)FindTask(NULL);
+    APTR window = me->pr_WindowPtr;
+    me->pr_WindowPtr = (APTR)-1;              /* a missing volume is a line on the page, not a requester */
     if (!GfxBase) { GfxBase = (struct GfxBase *)OpenLibrary((CONST_STRPTR)"graphics.library", 33); own_gfx = 1; }
 
     oap_testpage_section(t, "This Amiga");
@@ -161,5 +171,6 @@ void oap_testpage_amiga(OAPTestPage *t, const char *printer_name, const char *ur
     dt.dat_StrDay = (STRPTR)day; dt.dat_StrDate = (STRPTR)date; dt.dat_StrTime = (STRPTR)clock_;
     if (DateToStr(&dt)) { snprintf(when, sizeof(when), "%s %s %s", day, date, clock_); oap_testpage_line(t, "At", "%s", when); }
     if (own_gfx && GfxBase) { CloseLibrary((struct Library *)GfxBase); GfxBase = NULL; }
+    me->pr_WindowPtr = window;
     if (net && !had_net) oap_net_stop();
 }
